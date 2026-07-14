@@ -2,6 +2,8 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
 require("dotenv").config();
 
 const connectDB = require("./config/db");
@@ -12,106 +14,198 @@ const roomRoutes = require("./routes/roomRoutes");
 // Middleware
 const errorHandler = require("./middleware/errorHandler");
 
-// Connect Database
+// ==============================
+// Connect MongoDB
+// ==============================
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
 
-// ======================
-// Middleware
-// ======================
+// ==============================
+// Socket.IO
+// ==============================
+const io = new Server(server, {
+    cors: {
+        origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true
+    }
+});
+
+// Make io available inside controllers
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+});
+
+// ==============================
+// Middlewares
+// ==============================
+
+app.use(helmet());
+
 app.use(
-  cors({
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
-    methods: ["GET", "POST", "DELETE"],
-    credentials: true,
-  })
+    cors({
+        origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE"]
+    })
 );
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// ======================
-// API Routes
-// ======================
+app.use(morgan("dev"));
 
-// Health Check
-app.get("/api/health", (req, res) => {
-  res.status(200).json({
-    status: "ok",
-    message: "SyncSpace Server is running smoothly",
-  });
+// ==============================
+// Routes
+// ==============================
+
+app.get("/", (req, res) => {
+    res.json({
+        success: true,
+        message: "Welcome to SyncSpace API 🚀"
+    });
 });
 
-// Room APIs
+app.get("/api/health", (req, res) => {
+    res.status(200).json({
+        success: true,
+        status: "Healthy",
+        uptime: process.uptime(),
+        timestamp: new Date()
+    });
+});
+
 app.use("/api/rooms", roomRoutes);
 
-// 404 Handler
+// ==============================
+// 404 Route
+// ==============================
+
 app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "API Route Not Found",
-  });
+    res.status(404).json({
+        success: false,
+        message: "Route not found"
+    });
 });
 
-// Global Error Handler
+// ==============================
+// Error Handler
+// ==============================
+
 app.use(errorHandler);
 
-// ======================
-// HTTP Server
-// ======================
-const server = http.createServer(app);
-
-// ======================
-// Socket.IO
-// ======================
-const io = new Server(server, {
-  cors: {
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
-    methods: ["GET", "POST", "DELETE"],
-    credentials: true,
-  },
-});
+// ==============================
+// Socket Events
+// ==============================
 
 io.on("connection", (socket) => {
-  console.log(`User connected: ${socket.id}`);
 
-  // Join Room
-  socket.on("join-room", ({ roomId, username }) => {
-    socket.join(roomId);
+    console.log(`🟢 User Connected : ${socket.id}`);
 
-    console.log(`${username} joined ${roomId}`);
+    // Join Room
+    socket.on("join-room", ({ roomId, username }) => {
 
-    socket.to(roomId).emit("user-joined", {
-      username,
-      socketId: socket.id,
+        socket.join(roomId);
+
+        console.log(`${username} joined ${roomId}`);
+
+        io.to(roomId).emit("user-joined", {
+            username,
+            socketId: socket.id
+        });
+
     });
-  });
 
-  // Whiteboard Drawing
-  socket.on("draw", ({ roomId, drawData }) => {
-    socket.to(roomId).emit("draw", drawData);
-  });
+    // Leave Room
+    socket.on("leave-room", ({ roomId, username }) => {
 
-  // Code Sync
-  socket.on("code-change", ({ roomId, code }) => {
-    socket.to(roomId).emit("code-change", code);
-  });
+        socket.leave(roomId);
 
-  // Disconnect
-  socket.on("disconnect", () => {
-    console.log(`User disconnected: ${socket.id}`);
-  });
+        io.to(roomId).emit("user-left", {
+            username
+        });
+
+    });
+
+    // Live Code Sync
+    socket.on("code-change", ({ roomId, code }) => {
+
+        socket.to(roomId).emit("code-change", code);
+
+    });
+
+    // Whiteboard
+    socket.on("draw", ({ roomId, drawData }) => {
+
+        socket.to(roomId).emit("draw", drawData);
+
+    });
+
+    // Chat
+    socket.on("send-message", ({ roomId, message, username }) => {
+
+        io.to(roomId).emit("receive-message", {
+            username,
+            message,
+            time: new Date()
+        });
+
+    });
+
+    // Typing Indicator
+    socket.on("typing", ({ roomId, username }) => {
+
+        socket.to(roomId).emit("typing", username);
+
+    });
+
+    socket.on("stop-typing", ({ roomId }) => {
+
+        socket.to(roomId).emit("stop-typing");
+
+    });
+
+    socket.on("disconnect", () => {
+
+        console.log(`🔴 User Disconnected : ${socket.id}`);
+
+    });
+
 });
 
-// ======================
+// ==============================
 // Start Server
-// ======================
+// ==============================
+
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
-  console.log(
-    `🚀 SyncSpace Server running on port ${PORT} in ${
-      process.env.NODE_ENV || "development"
-    } mode`
-  );
+
+    console.log("=========================================");
+    console.log(`🚀 SyncSpace Server Started`);
+    console.log(`🌍 Port        : ${PORT}`);
+    console.log(`🛠 Environment : ${process.env.NODE_ENV || "development"}`);
+    console.log("=========================================");
+
+});
+
+// ==============================
+// Graceful Shutdown
+// ==============================
+
+process.on("SIGINT", async () => {
+
+    console.log("\nShutting down server...");
+
+    server.close(() => {
+
+        console.log("HTTP Server Closed");
+
+        process.exit(0);
+
+    });
+
 });
