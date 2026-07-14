@@ -1,7 +1,8 @@
 import { useState } from "react";
-import CodeEditor from "./components/CodeEditor";
+import CodeEditor from "../components/CodeEditor";
 
-function App() {
+function EditorPage() {
+// TODO: Replace local state with Yjs shared document
   const [code, setCode] = useState("// Start coding...");
 
   return (
@@ -13,4 +14,4 @@ function App() {
   );
 }
 
-export default App;
+export default EditorPage;
