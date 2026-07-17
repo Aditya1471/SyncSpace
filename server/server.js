@@ -2,6 +2,9 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
+
 require("dotenv").config();
 
 const connectDB = require("./config/db");
@@ -12,106 +15,95 @@ const roomRoutes = require("./routes/roomRoutes");
 // Middleware
 const errorHandler = require("./middleware/errorHandler");
 
-// Connect Database
+// Database Connection
 connectDB();
 
 const app = express();
 
-// ======================
-// Middleware
-// ======================
+app.use(helmet());
+
+app.use(morgan("dev"));
+
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
-    methods: ["GET", "POST", "DELETE"],
+    origin: process.env.CLIENT_ORIGIN,
     credentials: true,
   })
 );
 
 app.use(express.json());
 
-// ======================
-// API Routes
-// ======================
+app.use(express.urlencoded({ extended: true }));
 
-// Health Check
+// Attach io later if controllers need it
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
+// Health API
 app.get("/api/health", (req, res) => {
   res.status(200).json({
-    status: "ok",
-    message: "SyncSpace Server is running smoothly",
+    success: true,
+    message: "SyncSpace Server is running",
   });
 });
 
 // Room APIs
 app.use("/api/rooms", roomRoutes);
 
-// 404 Handler
+// 404
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: "API Route Not Found",
+    message: "API Not Found",
   });
 });
 
 // Global Error Handler
 app.use(errorHandler);
 
-// ======================
-// HTTP Server
-// ======================
 const server = http.createServer(app);
 
-// ======================
-// Socket.IO
-// ======================
+// Socket.io
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
-    methods: ["GET", "POST", "DELETE"],
+    origin: process.env.CLIENT_ORIGIN,
     credentials: true,
   },
 });
 
 io.on("connection", (socket) => {
-  console.log(`User connected: ${socket.id}`);
+  console.log("User Connected:", socket.id);
 
-  // Join Room
   socket.on("join-room", ({ roomId, username }) => {
     socket.join(roomId);
-
-    console.log(`${username} joined ${roomId}`);
 
     socket.to(roomId).emit("user-joined", {
       username,
       socketId: socket.id,
     });
+
+    console.log(`${username} joined ${roomId}`);
   });
 
-  // Whiteboard Drawing
   socket.on("draw", ({ roomId, drawData }) => {
     socket.to(roomId).emit("draw", drawData);
   });
 
-  // Code Sync
   socket.on("code-change", ({ roomId, code }) => {
     socket.to(roomId).emit("code-change", code);
   });
 
-  // Disconnect
   socket.on("disconnect", () => {
-    console.log(`User disconnected: ${socket.id}`);
+    console.log("Disconnected:", socket.id);
   });
 });
 
-// ======================
-// Start Server
-// ======================
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
   console.log(
-    `🚀 SyncSpace Server running on port ${PORT} in ${
-      process.env.NODE_ENV || "development"
-    } mode`
+    `🚀 Server running on port ${PORT} (${process.env.NODE_ENV})`
   );
 });

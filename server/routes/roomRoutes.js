@@ -2,54 +2,57 @@ const express = require("express");
 
 const router = express.Router();
 
+const validateRoom = require("../middleware/validateRoom");
+
 const {
-    createRoom,
-    getRooms,
-    getRoom,
-    deleteRoom
+  createRoom,
+  getRooms,
+  getRoomById,
+  deleteRoom,
+  updateRoom,
+  joinRoom,
+  leaveRoom,
+  getActiveRooms,
+  deactivateRoom,
 } = require("../controllers/roomController");
 
-const { body, validationResult } = require("express-validator");
+/*
+=========================================
+Room CRUD APIs
+=========================================
+*/
 
-const validateRoom = [
-
-    body("roomId")
-        .notEmpty()
-        .withMessage("Room ID is required"),
-
-    body("roomName")
-        .notEmpty()
-        .withMessage("Room Name is required"),
-
-    body("createdBy")
-        .notEmpty()
-        .withMessage("Creator is required"),
-
-    (req, res, next) => {
-
-        const errors = validationResult(req);
-
-        if (!errors.isEmpty()) {
-
-            return res.status(400).json({
-                success: false,
-                errors: errors.array()
-            });
-
-        }
-
-        next();
-
-    }
-
-];
-
+// Create Room
 router.post("/", validateRoom, createRoom);
 
+// Get All Rooms
 router.get("/", getRooms);
 
-router.get("/:roomId", getRoom);
+// Get Active Rooms
+router.get("/active", getActiveRooms);
 
+// Get Single Room
+router.get("/:roomId", getRoomById);
+
+// Update Room
+router.put("/:roomId", updateRoom);
+
+// Delete Room
 router.delete("/:roomId", deleteRoom);
+
+/*
+=========================================
+Socket Ready APIs
+=========================================
+*/
+
+// Join Room
+router.post("/:roomId/join", joinRoom);
+
+// Leave Room
+router.post("/:roomId/leave", leaveRoom);
+
+// Deactivate Room
+router.patch("/:roomId/deactivate", deactivateRoom);
 
 module.exports = router;
