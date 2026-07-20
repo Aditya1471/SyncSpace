@@ -1,7 +1,6 @@
-const { body, validationResult } = require("express-validator");
+import { body, validationResult } from "express-validator";
 
 const validateRoom = [
-
   body("roomId")
     .trim()
     .notEmpty()
@@ -26,22 +25,18 @@ const validateRoom = [
     .withMessage("Creator name must be between 2 and 50 characters"),
 
   (req, res, next) => {
-
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-
       return res.status(400).json({
         success: false,
         message: "Validation Failed",
         errors: errors.array(),
       });
-
     }
 
     next();
   },
-
 ];
 
-module.exports = validateRoom;
+export default validateRoom;

@@ -1,10 +1,8 @@
-const express = require("express");
+import express from "express";
 
-const router = express.Router();
+import validateRoom from "../middleware/validateRoom.js";
 
-const validateRoom = require("../middleware/validateRoom");
-
-const {
+import {
   createRoom,
   getRooms,
   getRoomById,
@@ -14,7 +12,9 @@ const {
   leaveRoom,
   getActiveRooms,
   deactivateRoom,
-} = require("../controllers/roomController");
+} from "../controllers/roomController.js";
+
+const router = express.Router();
 
 /*
 =========================================
@@ -55,4 +55,4 @@ router.post("/:roomId/leave", leaveRoom);
 // Deactivate Room
 router.patch("/:roomId/deactivate", deactivateRoom);
 
-module.exports = router;
+export default router;

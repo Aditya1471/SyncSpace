@@ -1,38 +1,33 @@
-import { useState } from "react";
-import Whiteboard from "./components/Whiteboard";
-import CodeEditor from "./components/CodeEditor";
-import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import LandingPage from "./pages/LandingPage";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import UserDashboard from "./pages/UserDashboard";
+import Workspace from "./pages/Workspace";
 
 function App() {
-  const [code, setCode] = useState(`// Welcome to SyncSpace\n\nfunction hello() {\n  console.log("Hello SyncSpace!");\n}\n\nhello();`);
-
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <div className="brand">SyncSpace Workspace</div>
-        <div className="status">🟢 Collaborative Session Active (Port 5000)</div>
-      </header>
+    <BrowserRouter>
+      <Routes>
 
-      <div className="split-screen-layout">
-        <div className="panel whiteboard-panel">
-          <div className="panel-title">Interactive Whiteboard</div>
-          <div className="canvas-container">
-            <Whiteboard />
-          </div>
-        </div>
+        {/* Landing */}
+        <Route path="/" element={<LandingPage />} />
 
-        <div className="panel editor-panel">
-          <div className="panel-title">Collaborative Code Editor</div>
-          <div className="editor-container">
-            <CodeEditor
-              language="javascript"
-              value={code}
-              onChange={setCode}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+        {/* Login */}
+        <Route path="/login" element={<Login />} />
+
+        {/* Signup */}
+        <Route path="/signup" element={<Signup />} />
+
+        {/* Dashboard */}
+        <Route path="/dashboard" element={<UserDashboard />} />
+
+        {/* Whiteboard + Editor */}
+        <Route path="/workspace" element={<Workspace />} />
+
+      </Routes>
+    </BrowserRouter>
   );
 }
 

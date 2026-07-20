@@ -1,5 +1,5 @@
-const Room = require("../models/Room");
-const asyncHandler = require("../utils/asyncHandler");
+import Room from "../models/Room.js";
+import asyncHandler from "../utils/asyncHandler.js";
 
 /*
 =================================================
@@ -8,10 +8,9 @@ POST /api/rooms
 =================================================
 */
 
-exports.createRoom = asyncHandler(async (req, res) => {
+export const createRoom = asyncHandler(async (req, res) => {
   const { roomId, roomName, createdBy } = req.body;
 
-  // Check if room already exists
   const existingRoom = await Room.findOne({
     roomId: roomId.toUpperCase(),
   });
@@ -48,7 +47,7 @@ GET /api/rooms
 =================================================
 */
 
-exports.getRooms = asyncHandler(async (req, res) => {
+export const getRooms = asyncHandler(async (req, res) => {
   const rooms = await Room.find().sort({
     createdAt: -1,
   });
@@ -67,7 +66,7 @@ GET /api/rooms/:roomId
 =================================================
 */
 
-exports.getRoomById = asyncHandler(async (req, res) => {
+export const getRoomById = asyncHandler(async (req, res) => {
   const room = await Room.findOne({
     roomId: req.params.roomId.toUpperCase(),
   });
@@ -92,7 +91,7 @@ DELETE /api/rooms/:roomId
 =================================================
 */
 
-exports.deleteRoom = asyncHandler(async (req, res) => {
+export const deleteRoom = asyncHandler(async (req, res) => {
   const room = await Room.findOne({
     roomId: req.params.roomId.toUpperCase(),
   });
@@ -123,7 +122,7 @@ Join Room
 =================================================
 */
 
-exports.joinRoom = asyncHandler(async (req, res) => {
+export const joinRoom = asyncHandler(async (req, res) => {
   const { username } = req.body;
 
   const room = await Room.findOne({
@@ -159,7 +158,7 @@ Leave Room
 =================================================
 */
 
-exports.leaveRoom = asyncHandler(async (req, res) => {
+export const leaveRoom = asyncHandler(async (req, res) => {
   const { username } = req.body;
 
   const room = await Room.findOne({
@@ -195,7 +194,7 @@ PUT /api/rooms/:roomId
 =================================================
 */
 
-exports.updateRoom = asyncHandler(async (req, res) => {
+export const updateRoom = asyncHandler(async (req, res) => {
   const { roomName } = req.body;
 
   const room = await Room.findOne({
@@ -210,7 +209,6 @@ exports.updateRoom = asyncHandler(async (req, res) => {
   }
 
   room.roomName = roomName;
-
   room.lastActivity = new Date();
 
   await room.save();
@@ -228,7 +226,7 @@ Get Active Rooms
 =================================================
 */
 
-exports.getActiveRooms = asyncHandler(async (req, res) => {
+export const getActiveRooms = asyncHandler(async (req, res) => {
   const rooms = await Room.find({
     isActive: true,
   }).sort({
@@ -248,7 +246,7 @@ Deactivate Room
 =================================================
 */
 
-exports.deactivateRoom = asyncHandler(async (req, res) => {
+export const deactivateRoom = asyncHandler(async (req, res) => {
   const room = await Room.findOne({
     roomId: req.params.roomId.toUpperCase(),
   });
@@ -261,7 +259,6 @@ exports.deactivateRoom = asyncHandler(async (req, res) => {
   }
 
   room.isActive = false;
-
   room.lastActivity = new Date();
 
   await room.save();
