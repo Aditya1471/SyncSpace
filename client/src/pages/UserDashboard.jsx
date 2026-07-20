@@ -234,7 +234,7 @@ export default function UserDashboard() {
 
               <br />
 
-              Mahesh 👋
+              
 
             </h1>
 
