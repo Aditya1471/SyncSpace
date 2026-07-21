@@ -1,15 +1,33 @@
-import { useState } from "react";
-import CodeEditor from "./components/CodeEditor";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import LandingPage from "./pages/LandingPage";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import UserDashboard from "./pages/UserDashboard";
+import Workspace from "./pages/Workspace";
 
 function App() {
-  const [code, setCode] = useState("// Start coding...");
-
   return (
-    <CodeEditor
-      language="javascript"
-      value={code}
-      onChange={setCode}
-    />
+    <BrowserRouter>
+      <Routes>
+
+        {/* Landing */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Login */}
+        <Route path="/login" element={<Login />} />
+
+        {/* Signup */}
+        <Route path="/signup" element={<Signup />} />
+
+        {/* Dashboard */}
+        <Route path="/dashboard" element={<UserDashboard />} />
+
+        {/* Whiteboard + Editor */}
+        <Route path="/workspace" element={<Workspace />} />
+
+      </Routes>
+    </BrowserRouter>
   );
 }
 

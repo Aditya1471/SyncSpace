@@ -1,147 +1,271 @@
-const Room = require("../models/Room");
+import Room from "../models/Room.js";
+import asyncHandler from "../utils/asyncHandler.js";
 
+/*
+=================================================
+Create Room
+POST /api/rooms
+=================================================
+*/
 
-// Create Room
+export const createRoom = asyncHandler(async (req, res) => {
+  const { roomId, roomName, createdBy } = req.body;
 
-exports.createRoom = async (req, res) => {
+  const existingRoom = await Room.findOne({
+    roomId: roomId.toUpperCase(),
+  });
 
-    try {
+  if (existingRoom) {
+    return res.status(409).json({
+      success: false,
+      message: "Room already exists",
+    });
+  }
 
-        const { roomId, roomName, createdBy } = req.body;
+  const room = await Room.create({
+    roomId: roomId.toUpperCase(),
+    roomName,
+    createdBy,
+    participants: [],
+    isActive: true,
+    lastActivity: new Date(),
+  });
 
-        const roomExists = await Room.findOne({ roomId });
+  console.log(`Room Created : ${room.roomId}`);
 
-        if (roomExists) {
-            return res.status(400).json({
-                success: false,
-                message: "Room already exists"
-            });
-        }
+  res.status(201).json({
+    success: true,
+    message: "Room created successfully",
+    data: room,
+  });
+});
 
-        const room = await Room.create({
-            roomId,
-            roomName,
-            createdBy
-        });
+/*
+=================================================
+Get All Rooms
+GET /api/rooms
+=================================================
+*/
 
-        res.status(201).json({
-            success: true,
-            data: room
-        });
+export const getRooms = asyncHandler(async (req, res) => {
+  const rooms = await Room.find().sort({
+    createdAt: -1,
+  });
 
-    } catch (err) {
+  res.status(200).json({
+    success: true,
+    count: rooms.length,
+    data: rooms,
+  });
+});
 
-        res.status(500).json({
-            success: false,
-            message: err.message
-        });
+/*
+=================================================
+Get Room By RoomId
+GET /api/rooms/:roomId
+=================================================
+*/
 
-    }
+export const getRoomById = asyncHandler(async (req, res) => {
+  const room = await Room.findOne({
+    roomId: req.params.roomId.toUpperCase(),
+  });
 
-};
+  if (!room) {
+    return res.status(404).json({
+      success: false,
+      message: "Room not found",
+    });
+  }
 
+  res.status(200).json({
+    success: true,
+    data: room,
+  });
+});
 
+/*
+=================================================
+Delete Room
+DELETE /api/rooms/:roomId
+=================================================
+*/
 
+export const deleteRoom = asyncHandler(async (req, res) => {
+  const room = await Room.findOne({
+    roomId: req.params.roomId.toUpperCase(),
+  });
 
-// Get All Rooms
+  if (!room) {
+    return res.status(404).json({
+      success: false,
+      message: "Room not found",
+    });
+  }
 
-exports.getRooms = async (req, res) => {
+  await Room.deleteOne({
+    roomId: room.roomId,
+  });
 
-    try {
+  console.log(`Room Deleted : ${room.roomId}`);
 
-        const rooms = await Room.find().sort({ createdAt: -1 });
+  res.status(200).json({
+    success: true,
+    message: "Room deleted successfully",
+  });
+});
 
-        res.status(200).json({
-            success: true,
-            count: rooms.length,
-            data: rooms
-        });
+/*
+=================================================
+Join Room
+(Socket.IO Ready)
+=================================================
+*/
 
-    } catch (err) {
+export const joinRoom = asyncHandler(async (req, res) => {
+  const { username } = req.body;
 
-        res.status(500).json({
-            success: false,
-            message: err.message
-        });
+  const room = await Room.findOne({
+    roomId: req.params.roomId.toUpperCase(),
+  });
 
-    }
+  if (!room) {
+    return res.status(404).json({
+      success: false,
+      message: "Room not found",
+    });
+  }
 
-};
+  if (!room.participants.includes(username)) {
+    room.participants.push(username);
+  }
 
+  room.lastActivity = new Date();
 
+  await room.save();
 
+  res.status(200).json({
+    success: true,
+    message: `${username} joined the room`,
+    participants: room.participants,
+  });
+});
 
-// Get Single Room
+/*
+=================================================
+Leave Room
+(Socket.IO Ready)
+=================================================
+*/
 
-exports.getRoom = async (req, res) => {
+export const leaveRoom = asyncHandler(async (req, res) => {
+  const { username } = req.body;
 
-    try {
+  const room = await Room.findOne({
+    roomId: req.params.roomId.toUpperCase(),
+  });
 
-        const room = await Room.findOne({
-            roomId: req.params.roomId
-        });
+  if (!room) {
+    return res.status(404).json({
+      success: false,
+      message: "Room not found",
+    });
+  }
 
-        if (!room) {
+  room.participants = room.participants.filter(
+    (user) => user !== username
+  );
 
-            return res.status(404).json({
-                success: false,
-                message: "Room not found"
-            });
+  room.lastActivity = new Date();
 
-        }
+  await room.save();
 
-        res.status(200).json({
-            success: true,
-            data: room
-        });
+  res.status(200).json({
+    success: true,
+    message: `${username} left the room`,
+    participants: room.participants,
+  });
+});
 
-    } catch (err) {
+/*
+=================================================
+Update Room Name
+PUT /api/rooms/:roomId
+=================================================
+*/
 
-        res.status(500).json({
-            success: false,
-            message: err.message
-        });
+export const updateRoom = asyncHandler(async (req, res) => {
+  const { roomName } = req.body;
 
-    }
+  const room = await Room.findOne({
+    roomId: req.params.roomId.toUpperCase(),
+  });
 
-};
+  if (!room) {
+    return res.status(404).json({
+      success: false,
+      message: "Room not found",
+    });
+  }
 
+  room.roomName = roomName;
+  room.lastActivity = new Date();
 
+  await room.save();
 
+  res.status(200).json({
+    success: true,
+    message: "Room updated successfully",
+    data: room,
+  });
+});
 
-// Delete Room
+/*
+=================================================
+Get Active Rooms
+=================================================
+*/
 
-exports.deleteRoom = async (req, res) => {
+export const getActiveRooms = asyncHandler(async (req, res) => {
+  const rooms = await Room.find({
+    isActive: true,
+  }).sort({
+    createdAt: -1,
+  });
 
-    try {
+  res.status(200).json({
+    success: true,
+    count: rooms.length,
+    data: rooms,
+  });
+});
 
-        const room = await Room.findOne({
-            roomId: req.params.roomId
-        });
+/*
+=================================================
+Deactivate Room
+=================================================
+*/
 
-        if (!room) {
+export const deactivateRoom = asyncHandler(async (req, res) => {
+  const room = await Room.findOne({
+    roomId: req.params.roomId.toUpperCase(),
+  });
 
-            return res.status(404).json({
-                success: false,
-                message: "Room not found"
-            });
+  if (!room) {
+    return res.status(404).json({
+      success: false,
+      message: "Room not found",
+    });
+  }
 
-        }
+  room.isActive = false;
+  room.lastActivity = new Date();
 
-        await room.deleteOne();
+  await room.save();
 
-        res.status(200).json({
-            success: true,
-            message: "Room deleted successfully"
-        });
-
-    } catch (err) {
-
-        res.status(500).json({
-            success: false,
-            message: err.message
-        });
-
-    }
-
-};
+  res.status(200).json({
+    success: true,
+    message: "Room deactivated successfully",
+    data: room,
+  });
+});
