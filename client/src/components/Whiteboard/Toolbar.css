@@ -1,0 +1,714 @@
+/* Toolbar Stylesheet */
+
+/* Main Toolbar Wrapper */
+.whiteboard-toolbar {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 
+              0 8px 16px -6px rgba(0, 0, 0, 0.05),
+              0 0 1px 0 rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.2s ease, 
+              background-color 0.2s ease;
+  user-select: none;
+}
+
+.theme-dark .whiteboard-toolbar {
+  background-color: rgba(24, 24, 30, 0.85);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 
+              0 8px 16px -6px rgba(0, 0, 0, 0.3),
+              0 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Toolbar Groups */
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Group Separator */
+.toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background-color: rgba(0, 0, 0, 0.08);
+  margin: 0 6px;
+}
+
+.theme-dark .toolbar-separator {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Toolbar Buttons styling */
+.toolbar-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background-color: transparent;
+  color: #4b5563;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-dark .toolbar-btn {
+  color: #9ca3af;
+}
+
+.toolbar-btn .btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toolbar-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Hover State */
+.toolbar-btn:hover:not(:disabled) {
+  background-color: rgba(0, 0, 0, 0.04);
+  color: #111827;
+}
+
+.theme-dark .toolbar-btn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #f9fafb;
+}
+
+.toolbar-btn:hover:not(:disabled) svg {
+  transform: scale(1.1);
+}
+
+/* Active State */
+.toolbar-btn.active:not(:disabled) {
+  background-color: var(--accent, #aa3bff);
+  color: #ffffff;
+}
+
+.toolbar-btn.active:not(:disabled) svg {
+  stroke: #ffffff;
+  transform: scale(1.05);
+}
+
+/* Disabled State */
+.toolbar-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Custom Tooltip */
+.toolbar-btn .tooltip {
+  position: absolute;
+  top: 100%;
+  margin-top: 8px;
+  background-color: #1f2937;
+  color: #ffffff;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+  font-family: var(--sans, system-ui);
+}
+
+.theme-dark .toolbar-btn .tooltip {
+  background-color: #374151;
+}
+
+.toolbar-btn:hover:not(:disabled) .tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Red / Warning Specific Action Button */
+.toolbar-btn-danger:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.08);
+  color: #ef4444 !important;
+}
+
+.theme-dark .toolbar-btn-danger:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.15);
+}
+
+/* ========================================================
+   Custom ColorPicker styling
+   ======================================================== */
+.color-picker-container {
+  position: relative;
+}
+
+.color-picker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  background-color: transparent;
+  color: #4b5563;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: var(--sans, system-ui);
+}
+
+.theme-dark .color-picker-trigger {
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #9ca3af;
+}
+
+.color-picker-trigger:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+  color: #111827;
+}
+
+.theme-dark .color-picker-trigger:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #f9fafb;
+}
+
+.color-picker-preview-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+.theme-dark .color-picker-preview-wrapper {
+  border-color: rgba(255, 255, 255, 0.15);
+  background-color: #1a1a20;
+}
+
+.color-preview {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.color-preview-transparent {
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
+                    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, #ccc 75%),
+                    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-size: 6px 6px;
+  background-position: 0 0, 0 3px, 3px -3px, -3px 0px;
+}
+
+.chevron-icon {
+  transition: transform 0.2s ease;
+}
+
+.chevron-icon.open {
+  transform: rotate(180deg);
+}
+
+/* Color Picker Dropdown Popover */
+.color-picker-dropdown {
+  position: absolute;
+  top: 100%;
+  margin-top: 8px;
+  left: 0;
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  width: 180px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  z-index: 200;
+  animation: dropdownIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.theme-dark .color-picker-dropdown {
+  background-color: #1e1e24;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+}
+
+.dropdown-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 8px;
+  padding-left: 2px;
+  letter-spacing: 0.5px;
+  font-family: var(--sans, system-ui);
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.color-swatch {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  outline: none;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.theme-dark .color-swatch {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.color-swatch:hover {
+  transform: scale(1.12);
+}
+
+.color-swatch.selected {
+  border-color: var(--accent, #aa3bff);
+  box-shadow: 0 0 0 2px rgba(170, 59, 255, 0.2);
+}
+
+.swatch-transparent-line {
+  position: absolute;
+  width: 120%;
+  height: 2px;
+  background-color: #ef4444;
+  transform: rotate(-45deg);
+  pointer-events: none;
+}
+
+.swatch-check {
+  pointer-events: none;
+}
+
+/* ========================================================
+   StrokeSelector styling
+   ======================================================== */
+.stroke-selector-container {
+  position: relative;
+}
+
+.stroke-selector-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  background-color: transparent;
+  color: #4b5563;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: var(--sans, system-ui);
+}
+
+.theme-dark .stroke-selector-trigger {
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #9ca3af;
+}
+
+.stroke-selector-trigger:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+  color: #111827;
+}
+
+.theme-dark .stroke-selector-trigger:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #f9fafb;
+}
+
+.stroke-preview-circle-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+.stroke-preview-circle {
+  background-color: currentColor;
+  border-radius: 50%;
+}
+
+.stroke-value-label {
+  white-space: nowrap;
+}
+
+/* Stroke Selector Dropdown Popover */
+.stroke-selector-dropdown {
+  position: absolute;
+  top: 100%;
+  margin-top: 8px;
+  right: 0;
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  width: 170px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  z-index: 200;
+  animation: dropdownIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.theme-dark .stroke-selector-dropdown {
+  background-color: #1e1e24;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+}
+
+.stroke-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stroke-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: none;
+  background-color: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #4b5563;
+  width: 100%;
+  text-align: left;
+  outline: none;
+  font-size: 12px;
+  transition: all 0.15s ease;
+  font-family: var(--sans, system-ui);
+}
+
+.theme-dark .stroke-option-btn {
+  color: #9ca3af;
+}
+
+.stroke-option-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+  color: #111827;
+}
+
+.theme-dark .stroke-option-btn:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #f9fafb;
+}
+
+.stroke-option-btn.selected {
+  background-color: var(--accent-bg, rgba(170, 59, 255, 0.08));
+  color: var(--accent, #aa3bff);
+}
+
+.stroke-option-preview-line-container {
+  display: flex;
+  align-items: center;
+  width: 32px;
+  height: 16px;
+}
+
+.stroke-option-preview-line {
+  width: 100%;
+  background-color: currentColor;
+  border-radius: 2px;
+}
+
+.stroke-option-label {
+  flex-grow: 1;
+}
+
+.stroke-option-check {
+  flex-shrink: 0;
+}
+
+/* Animations */
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive styling */
+@media (max-width: 900px) {
+  .whiteboard-toolbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 90vw;
+    border-radius: 12px;
+    gap: 4px;
+    padding: 6px 10px;
+    top: 12px;
+  }
+  
+  .toolbar-separator {
+    height: 16px;
+    margin: 0 2px;
+  }
+  
+  .toolbar-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .toolbar-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .color-picker-trigger,
+  .stroke-selector-trigger {
+    height: 32px;
+    padding: 0 6px;
+    font-size: 11px;
+    gap: 4px;
+    border-radius: 8px;
+  }
+  
+  .color-picker-preview-wrapper,
+  .stroke-preview-circle-wrapper {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .color-picker-label,
+  .stroke-value-label,
+  .shapes-label-text {
+    display: none;
+  }
+
+  .toolbar-btn.shapes-trigger-btn {
+    min-width: 0;
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .toolbar-btn.shapes-trigger-btn .chevron-icon {
+    display: none;
+  }
+
+  .color-picker-dropdown,
+  .shapes-dropdown {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .stroke-selector-dropdown {
+    right: 50%;
+    transform: translateX(50%);
+  }
+}
+
+/* ColorPicker Trigger Disabled State */
+.color-picker-trigger.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  background-color: transparent;
+}
+
+.theme-dark .color-picker-trigger.disabled {
+  opacity: 0.35;
+}
+
+/* Shapes Dropdown Container and Trigger */
+.shapes-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.toolbar-btn.shapes-trigger-btn {
+  width: auto;
+  min-width: 96px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shapes-label-text {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--sans, system-ui);
+}
+
+.toolbar-btn.shapes-trigger-btn .chevron-icon {
+  width: 10px;
+  height: 10px;
+  stroke-width: 2.5;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.toolbar-btn.shapes-trigger-btn .chevron-icon.open {
+  transform: rotate(180deg);
+}
+
+/* Floating Shapes Dropdown Menu */
+.shapes-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  width: 160px;
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 
+              0 8px 16px -6px rgba(0, 0, 0, 0.04);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: shapesDropdownIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.theme-dark .shapes-dropdown {
+  background-color: rgba(24, 24, 30, 0.85);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35), 
+              0 8px 16px -6px rgba(0, 0, 0, 0.25);
+}
+
+@keyframes shapesDropdownIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* Shape Item Button Styles */
+.shape-item-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  height: 36px;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background-color: transparent;
+  color: #4b5563;
+  cursor: pointer;
+  outline: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: var(--sans, system-ui);
+  text-align: left;
+}
+
+.theme-dark .shape-item-btn {
+  color: #9ca3af;
+}
+
+.shape-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.shape-item-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+  transition: transform 0.15s ease;
+}
+
+/* Item States */
+.shape-item-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+  color: #111827;
+}
+
+.theme-dark .shape-item-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #f9fafb;
+}
+
+.shape-item-btn:hover .shape-item-icon svg {
+  transform: scale(1.08);
+}
+
+.shape-item-btn.active {
+  background-color: var(--accent-bg, rgba(170, 59, 255, 0.08));
+  color: var(--accent, #aa3bff);
+}
+
+.shape-item-btn.active .shape-item-icon svg {
+  stroke: var(--accent, #aa3bff);
+}
+
+/* Keyboard focus navigation indicator styling */
+.shape-item-btn.keyboard-focused,
+.shape-item-btn:focus-visible {
+  background-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 0 0 2px var(--accent, #aa3bff) inset;
+  color: #111827;
+}
+
+.theme-dark .shape-item-btn.keyboard-focused,
+.theme-dark .shape-item-btn:focus-visible {
+  background-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 2px var(--accent, #aa3bff) inset;
+  color: #f9fafb;
+}

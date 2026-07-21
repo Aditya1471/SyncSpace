@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Whiteboard from "../components/Whiteboard";
+import Whiteboard from "../components/Whiteboard/Whiteboard";
 import CodeEditor from "../components/CodeEditor";
 import "../App.css";
 
