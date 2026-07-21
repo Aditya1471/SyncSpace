@@ -1,0 +1,707 @@
+/* =========================================================
+   SyncSpace Premium Room Landing
+   PART 1
+========================================================= */
+
+.room-landing-container{
+    --primary:#2563eb;
+    --secondary:#38bdf8;
+    --success:#22c55e;
+    --danger:#ef4444;
+    --dark:#020617;
+    --dark2:#0f172a;
+    --card:rgba(15,23,42,.92);
+    --border:rgba(255,255,255,.08);
+    --text:#f8fafc;
+    --muted:#94a3b8;
+
+    width:100%;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    position:relative;
+    overflow:hidden;
+    padding:40px 20px;
+    background:
+    radial-gradient(circle at top left,#1e40af 0%,transparent 35%),
+    radial-gradient(circle at bottom right,#0ea5e9 0%,transparent 35%),
+    linear-gradient(135deg,#020617,#0f172a,#111827);
+    font-family:"Inter","Poppins",sans-serif;
+}
+
+/* ==========================
+   Animated Background
+========================== */
+
+.bg-glow{
+    position:absolute;
+    width:420px;
+    height:420px;
+    border-radius:50%;
+    filter:blur(120px);
+    opacity:.35;
+    animation:floatGlow 8s ease-in-out infinite;
+}
+
+.glow-top-left{
+    background:#2563eb;
+    top:-150px;
+    left:-150px;
+}
+
+.glow-bottom-right{
+    background:#06b6d4;
+    right:-150px;
+    bottom:-150px;
+    animation-delay:4s;
+}
+
+@keyframes floatGlow{
+
+0%{
+transform:translateY(0px) scale(1);
+}
+
+50%{
+transform:translateY(-25px) scale(1.08);
+}
+
+100%{
+transform:translateY(0px) scale(1);
+}
+
+}
+
+/* ==========================
+   Main Card
+========================== */
+
+.room-card{
+    width:100%;
+    max-width:620px;
+    position:relative;
+    z-index:2;
+    padding:38px;
+    border-radius:28px;
+    background:var(--card);
+    backdrop-filter:blur(25px);
+    border:1px solid var(--border);
+    box-shadow:
+    0 25px 60px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* ==========================
+   Header
+========================== */
+
+.card-header{
+    text-align:center;
+    margin-bottom:35px;
+}
+
+.logo-icon-wrapper{
+    width:80px;
+    height:80px;
+    margin:auto;
+    border-radius:22px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:34px;
+    color:#fff;
+    background:linear-gradient(135deg,#2563eb,#38bdf8);
+    box-shadow:
+    0 20px 40px rgba(37,99,235,.45);
+    animation:logoFloat 5s ease-in-out infinite;
+}
+
+@keyframes logoFloat{
+
+0%{
+transform:translateY(0px);
+}
+
+50%{
+transform:translateY(-8px);
+}
+
+100%{
+transform:translateY(0px);
+}
+
+}
+
+.card-header h2{
+    margin-top:22px;
+    color:#fff;
+    font-size:34px;
+    font-weight:800;
+    letter-spacing:.5px;
+}
+
+.card-header p{
+    margin-top:15px;
+    color:#94a3b8;
+    line-height:1.7;
+    font-size:15px;
+}
+
+/* ==========================
+   Toggle Buttons
+========================== */
+
+.form-toggle{
+    display:flex;
+    gap:12px;
+    padding:8px;
+    margin-bottom:35px;
+    border-radius:18px;
+    background:#111827;
+    border:1px solid rgba(255,255,255,.05);
+}
+
+.toggle-btn{
+    flex:1;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    padding:15px;
+    border:none;
+    cursor:pointer;
+    border-radius:14px;
+    background:transparent;
+    color:#94a3b8;
+    font-size:15px;
+    font-weight:700;
+    transition:.35s;
+}
+
+.toggle-btn:hover{
+    color:#fff;
+    background:#1e293b;
+}
+
+.toggle-btn.active{
+    color:#fff;
+    background:linear-gradient(135deg,#2563eb,#38bdf8);
+    box-shadow:
+    0 15px 35px rgba(37,99,235,.35);
+    transform:translateY(-2px);
+}
+/* =========================================================
+   PART 2 - FORM ELEMENTS
+========================================================= */
+
+/* ==========================
+   Form
+========================== */
+
+.room-form{
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+}
+
+/* ==========================
+   Input Group
+========================== */
+
+.input-group{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.input-group label{
+    color:#cbd5e1;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:.3px;
+}
+
+/* ==========================
+   Inputs
+========================== */
+
+.input-group input{
+    width:100%;
+    height:58px;
+    padding:0 18px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(30,41,59,.65);
+    color:#fff;
+    font-size:15px;
+    outline:none;
+    transition:.35s ease;
+}
+
+.input-group input::placeholder{
+    color:#64748b;
+}
+
+.input-group input:hover{
+    border-color:rgba(56,189,248,.35);
+}
+
+.input-group input:focus{
+    border-color:#38bdf8;
+    background:#162033;
+    box-shadow:
+        0 0 0 4px rgba(56,189,248,.12),
+        0 10px 30px rgba(56,189,248,.18);
+}
+
+/* ==========================
+   Input With Icon
+========================== */
+
+.input-with-icon{
+    position:relative;
+}
+
+.field-icon{
+    position:absolute;
+    top:50%;
+    left:18px;
+    transform:translateY(-50%);
+    color:#38bdf8;
+    font-size:16px;
+    pointer-events:none;
+}
+
+.input-with-icon input{
+    padding-left:50px;
+}
+
+/* ==========================
+   Submit Button
+========================== */
+
+.submit-btn{
+    width:100%;
+    height:58px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:12px;
+    border:none;
+    border-radius:16px;
+    cursor:pointer;
+    color:#fff;
+    font-size:16px;
+    font-weight:700;
+    letter-spacing:.3px;
+    background:linear-gradient(135deg,#2563eb,#38bdf8);
+    transition:all .35s ease;
+    box-shadow:
+        0 18px 40px rgba(37,99,235,.35);
+}
+
+.submit-btn:hover{
+    transform:translateY(-3px);
+    box-shadow:
+        0 24px 50px rgba(37,99,235,.45);
+}
+
+.submit-btn:active{
+    transform:scale(.98);
+}
+
+.submit-btn:disabled{
+    cursor:not-allowed;
+    opacity:.65;
+    transform:none;
+}
+
+/* ==========================
+   Secondary Button
+========================== */
+
+.submit-btn.secondary{
+    background:linear-gradient(135deg,#0ea5e9,#06b6d4);
+}
+
+.submit-btn.secondary:hover{
+    box-shadow:
+        0 24px 50px rgba(6,182,212,.35);
+}
+
+/* ==========================
+   Loading Animation
+========================== */
+
+.submit-btn:disabled svg{
+    animation:spinLoader .9s linear infinite;
+}
+
+@keyframes spinLoader{
+
+from{
+    transform:rotate(0deg);
+}
+
+to{
+    transform:rotate(360deg);
+}
+
+}
+
+/* ==========================
+   Smooth Appearance
+========================== */
+
+.room-form{
+    animation:fadeForm .45s ease;
+}
+
+@keyframes fadeForm{
+
+from{
+    opacity:0;
+    transform:translateY(18px);
+}
+
+to{
+    opacity:1;
+    transform:translateY(0);
+}
+
+}
+
+/* ==========================
+   Input Autofill Fix
+========================== */
+
+.room-landing-container input:-webkit-autofill,
+.room-landing-container input:-webkit-autofill:hover,
+.room-landing-container input:-webkit-autofill:focus{
+    -webkit-text-fill-color:#fff;
+    transition:background-color 9999s ease-in-out 0s;
+}
+/* =========================================================
+   PART 3 - PREMIUM EFFECTS & RESPONSIVE
+========================================================= */
+
+/* ==========================
+   Glass Shine Effect
+========================== */
+
+.room-card{
+    overflow:hidden;
+    position:relative;
+}
+
+.room-card::before{
+    content:"";
+    position:absolute;
+    top:-120%;
+    left:-40%;
+    width:220px;
+    height:220%;
+    background:linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.08),
+        transparent
+    );
+    transform:rotate(25deg);
+    animation:cardShine 8s linear infinite;
+}
+
+@keyframes cardShine{
+
+0%{
+left:-60%;
+}
+
+100%{
+left:160%;
+}
+
+}
+
+/* ==========================
+   Input Animation
+========================== */
+
+.input-group{
+    animation:slideUp .5s ease;
+}
+
+@keyframes slideUp{
+
+0%{
+opacity:0;
+transform:translateY(20px);
+}
+
+100%{
+opacity:1;
+transform:translateY(0);
+}
+
+}
+
+/* ==========================
+   Hover Glow
+========================== */
+
+.submit-btn:hover{
+    filter:brightness(1.05);
+}
+
+.toggle-btn.active{
+    position:relative;
+    overflow:hidden;
+}
+
+.toggle-btn.active::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(
+        120deg,
+        transparent,
+        rgba(255,255,255,.15),
+        transparent
+    );
+    animation:buttonShine 3s infinite;
+}
+
+@keyframes buttonShine{
+
+0%{
+transform:translateX(-100%);
+}
+
+100%{
+transform:translateX(200%);
+}
+
+}
+
+/* ==========================
+   Card Floating Animation
+========================== */
+
+.room-card{
+    animation:floatCard 7s ease-in-out infinite;
+}
+
+@keyframes floatCard{
+
+0%{
+transform:translateY(0px);
+}
+
+50%{
+transform:translateY(-6px);
+}
+
+100%{
+transform:translateY(0px);
+}
+
+}
+
+/* ==========================
+   Custom Scrollbar
+========================== */
+
+.room-landing-container *::-webkit-scrollbar{
+    width:8px;
+}
+
+.room-landing-container *::-webkit-scrollbar-track{
+    background:#0f172a;
+}
+
+.room-landing-container *::-webkit-scrollbar-thumb{
+    background:#2563eb;
+    border-radius:20px;
+}
+
+.room-landing-container *::-webkit-scrollbar-thumb:hover{
+    background:#38bdf8;
+}
+
+/* ==========================
+   Selection
+========================== */
+
+.room-landing-container ::selection{
+    background:#2563eb;
+    color:#fff;
+}
+
+/* ==========================
+   Utility Classes
+========================== */
+
+.text-primary{
+    color:#38bdf8;
+}
+
+.text-success{
+    color:#22c55e;
+}
+
+.text-danger{
+    color:#ef4444;
+}
+
+/* ==========================
+   Responsive (Tablet)
+========================== */
+
+@media(max-width:900px){
+
+.room-card{
+max-width:95%;
+padding:30px;
+}
+
+.card-header h2{
+font-size:30px;
+}
+
+.card-header p{
+font-size:14px;
+}
+
+.form-toggle{
+flex-direction:column;
+}
+
+.toggle-btn{
+width:100%;
+}
+
+}
+
+/* ==========================
+   Responsive (Mobile)
+========================== */
+
+@media(max-width:600px){
+
+.room-landing-container{
+padding:20px 14px;
+}
+
+.room-card{
+padding:22px;
+border-radius:22px;
+}
+
+.logo-icon-wrapper{
+width:65px;
+height:65px;
+font-size:28px;
+}
+
+.card-header h2{
+font-size:26px;
+}
+
+.card-header p{
+font-size:13px;
+line-height:1.6;
+}
+
+.input-group label{
+font-size:13px;
+}
+
+.input-group input{
+height:52px;
+font-size:14px;
+}
+
+.input-with-icon input{
+padding-left:45px;
+}
+
+.field-icon{
+left:15px;
+font-size:15px;
+}
+
+.submit-btn{
+height:54px;
+font-size:15px;
+}
+
+.toggle-btn{
+padding:13px;
+font-size:14px;
+}
+
+}
+
+/* ==========================
+   Large Screens
+========================== */
+
+@media(min-width:1400px){
+
+.room-card{
+max-width:700px;
+padding:48px;
+}
+
+.card-header h2{
+font-size:38px;
+}
+
+.card-header p{
+font-size:16px;
+}
+
+.input-group input{
+height:62px;
+font-size:16px;
+}
+
+.submit-btn{
+height:62px;
+font-size:17px;
+}
+
+}
+
+/* ==========================
+   Smooth Transitions
+========================== */
+
+.room-card,
+.submit-btn,
+.toggle-btn,
+.input-group input,
+.share-btn{
+transition:all .35s ease;
+}
+
+/* ==========================
+   Focus Accessibility
+========================== */
+
+button:focus-visible,
+input:focus-visible{
+outline:2px solid #38bdf8;
+outline-offset:2px;
+}
+
+/* ==========================
+   Premium Shadow
+========================== */
+
+.room-card:hover{
+box-shadow:
+0 35px 70px rgba(0,0,0,.55),
+0 0 40px rgba(37,99,235,.12);
+}

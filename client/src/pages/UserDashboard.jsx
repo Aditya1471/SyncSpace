@@ -1,74 +1,124 @@
 // src/pages/UserDashboard.jsx
 
-import "../css/UserDashboard.css";
-import { Link } from "react-router-dom";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import "../css/Userdashboard.css";
 
 import {
   FaHome,
+  FaUserCircle,
   FaUsers,
-  FaCode,
-  FaPaintBrush,
-  FaComments,
-  FaFolderOpen,
-  FaChartLine,
   FaCog,
   FaSignOutAlt,
   FaBell,
   FaSearch,
   FaPlus,
   FaArrowRight,
-  FaCalendarAlt,
   FaClock,
-  FaVideo,
+  FaRocket,
   FaCodeBranch,
   FaFire,
-  FaRocket,
+  FaHistory,
+  FaUserFriends,
+  FaCheckCircle,
+  FaCircle,
 } from "react-icons/fa";
 
-const stats = [
-  {
-    id: 1,
-    icon: <FaUsers />,
-    title: "Active Rooms",
-    value: "12",
-    color: "#6366f1",
-  },
-  {
-    id: 2,
-    icon: <FaCode />,
-    title: "Live Editors",
-    value: "47",
-    color: "#0ea5e9",
-  },
-  {
-    id: 3,
-    icon: <FaPaintBrush />,
-    title: "Whiteboards",
-    value: "18",
-    color: "#10b981",
-  },
-  {
-    id: 4,
-    icon: <FaFolderOpen />,
-    title: "Shared Files",
-    value: "426",
-    color: "#f59e0b",
-  },
-];
-
-const onlineUsers = [
-  "Mahesh",
-  "Aditya",
-  "Rahul",
-  "Priya",
-  "Anjali",
-];
-
 export default function UserDashboard() {
+  const navigate = useNavigate();
+
+  // ===========================
+  // User Data
+  // ===========================
+
+  const username =
+    localStorage.getItem("syncspace_user") || "Mahesh";
+
+  const stats = [
+    {
+      id: 1,
+      title: "Rooms Created",
+      value: "18",
+      icon: <FaUsers />,
+      color: "#6366f1",
+    },
+    {
+      id: 2,
+      title: "Rooms Joined",
+      value: "46",
+      icon: <FaUserFriends />,
+      color: "#06b6d4",
+    },
+    {
+      id: 3,
+      title: "Projects",
+      value: "12",
+      icon: <FaRocket />,
+      color: "#10b981",
+    },
+    {
+      id: 4,
+      title: "Hours",
+      value: "328",
+      icon: <FaClock />,
+      color: "#f59e0b",
+    },
+  ];
+
+  const recentRooms = [
+    {
+      id: 1,
+      room: "React Development",
+      members: 8,
+      updated: "2 mins ago",
+      status: "Active",
+    },
+    {
+      id: 2,
+      room: "Backend API",
+      members: 5,
+      updated: "12 mins ago",
+      status: "Online",
+    },
+    {
+      id: 3,
+      room: "Placement Prep",
+      members: 4,
+      updated: "30 mins ago",
+      status: "Active",
+    },
+    {
+      id: 4,
+      room: "College Project",
+      members: 6,
+      updated: "Yesterday",
+      status: "Offline",
+    },
+  ];
+
+  const activities = [
+    "Created a new room",
+    "Joined Backend API",
+    "Started collaboration",
+    "Shared project ideas",
+    "Updated workspace",
+  ];
+
+  // ===========================
+  // Logout
+  // ===========================
+
+  const handleLogout = () => {
+    localStorage.removeItem("syncspace_user");
+    navigate("/");
+  };
+
   return (
     <div className="dashboard">
 
-      {/* ================= Sidebar ================= */}
+      {/* ================================= */}
+      {/* Sidebar */}
+      {/* ================================= */}
 
       <aside className="sidebar">
 
@@ -85,92 +135,84 @@ export default function UserDashboard() {
           <ul className="menu">
 
             <li className="active">
+
               <FaHome />
-              Dashboard
+
+              <span>Dashboard</span>
+
             </li>
 
             <li>
 
-    <Link 
-        to="/create-room"
-        className="sidebar-link"
-    >
+              <Link
+                to="/rooms"
+                className="sidebar-link"
+              >
 
-        <FaUsers />
+                <FaUsers />
 
-        <span>
-            Rooms
-        </span>
+                <span>Rooms</span>
 
-    </Link>
+              </Link>
 
-</li>
-
-           <li>
-
-    <Link 
-        to="/code-editor"
-        className="sidebar-link"
-    >
-
-        <FaCode />
-
-        <span>
-            Code Editor
-        </span>
-
-    </Link>
-
-</li>
-
-            <li>
-  <Link to="/whiteboard" className="sidebar-link">
-
-    <FaPaintBrush />
-
-    <span>
-      Whiteboard
-    </span>
-
-  </Link>
-</li>
-
-            <li>
-              <FaComments />
-              Team Chat
             </li>
 
             <li>
-              <FaFolderOpen />
-              Shared Files
+
+              <Link
+                to="/profile"
+                className="sidebar-link"
+              >
+
+                <FaUserCircle />
+
+                <span>Profile</span>
+
+              </Link>
+
             </li>
 
             <li>
-              <FaChartLine />
-              Analytics
-            </li>
 
-            <li>
-              <FaCog />
-              Settings
+              <Link
+                to="/settings"
+                className="sidebar-link"
+              >
+
+                <FaCog />
+
+                <span>Settings</span>
+
+              </Link>
+
             </li>
 
           </ul>
 
         </div>
 
-        <button className="logout-btn">
+        <button
+          className="logout-btn"
+          onClick={handleLogout}
+        >
+
           <FaSignOutAlt />
+
           Logout
+
         </button>
 
       </aside>
 
-      {/* ================= Main ================= */}
+      {/* ================================= */}
+      {/* Main */}
+      {/* ================================= */}
 
       <main className="main-content">
 
-        {/* ================= Top Bar ================= */}
+        {/* ================================= */}
+        {/* Topbar */}
+        {/* ================================= */}
 
         <header className="topbar">
 
@@ -180,31 +222,32 @@ export default function UserDashboard() {
 
             <input
               type="text"
-              placeholder="Search Rooms..."
+              placeholder="Search rooms..."
             />
 
           </div>
 
-          <div className="top-right">
+          <div className="topbar-right">
 
-            <button className="notification">
+            <button className="notification-btn">
 
               <FaBell />
 
             </button>
 
-            <div className="profile">
+            <div className="profile-box">
 
-              <img
-                src=""
-                alt=""
-              />
+              <div className="profile-avatar">
+
+                {username.charAt(0).toUpperCase()}
+
+              </div>
 
               <div>
 
-                <h4>User</h4>
+                <h4>{}</h4>
 
-                <span>Software Developer</span>
+                <span>Full Stack Developer</span>
 
               </div>
 
@@ -214,7 +257,9 @@ export default function UserDashboard() {
 
         </header>
 
-        {/* ================= Hero ================= */}
+        {/* ================================= */}
+        {/* Hero Section */}
+        {/* ================================= */}
 
         <section className="hero">
 
@@ -224,7 +269,7 @@ export default function UserDashboard() {
 
               <FaFire />
 
-              Productivity +12%
+              Welcome Back
 
             </span>
 
@@ -234,37 +279,44 @@ export default function UserDashboard() {
 
               <br />
 
-              
+              {} 👋
 
             </h1>
 
             <p>
 
-              Welcome back to SyncSpace.
-
-              Collaborate with your teammates,
-              code together, brainstorm ideas,
-              and manage your projects in one place.
+              Manage your collaborative rooms,
+              create new workspaces,
+              and continue building projects with
+              your teammates.
 
             </p>
 
             <div className="hero-buttons">
 
-              <button className="primary-btn">
+              <Link to="/rooms">
 
-                <FaPlus />
+                <button className="primary-btn">
 
-                Create Room
+                  <FaPlus />
 
-              </button>
+                  Create Room
 
-              <button className="secondary-btn">
+                </button>
 
-                <FaArrowRight />
+              </Link>
 
-                Join Room
+              <Link to="/rooms">
 
-              </button>
+                <button className="secondary-btn">
+
+                  <FaArrowRight />
+
+                  Join Room
+
+                </button>
+
+              </Link>
 
             </div>
 
@@ -272,38 +324,25 @@ export default function UserDashboard() {
 
           <div className="hero-right">
 
-            <div className="hero-card">
+            <div className="profile-card">
 
-              <h3>Online Team</h3>
+              <div className="big-avatar">
 
-              <div className="avatars">
-
-                {onlineUsers.map((user, index) => (
-
-                  <div
-                    key={index}
-                    className="avatar"
-                  >
-                    {user.charAt(0)}
-                  </div>
-
-                ))}
+                {username.charAt(0).toUpperCase()}
 
               </div>
 
-              <p>23 Members Online</p>
+              <h3>{username}</h3>
 
-            </div>
+              <p>Full Stack Developer</p>
 
-            <div className="hero-card">
+              <div className="status">
 
-              <FaCalendarAlt className="hero-icon" />
+                <FaCircle />
 
-              <h3>Today's Meeting</h3>
+                Online
 
-              <p>Frontend Sprint Review</p>
-
-              <small>02:00 PM</small>
+              </div>
 
             </div>
 
@@ -311,15 +350,17 @@ export default function UserDashboard() {
 
         </section>
 
-        {/* ================= Statistics ================= */}
+        {/* ================================= */}
+        {/* Statistics */}
+        {/* ================================= */}
 
         <section className="stats">
 
           {stats.map((item) => (
 
             <div
-              className="stat-card"
               key={item.id}
+              className="stat-card"
             >
 
               <div
@@ -328,7 +369,9 @@ export default function UserDashboard() {
                   background: item.color,
                 }}
               >
+
                 {item.icon}
+
               </div>
 
               <div>
@@ -345,124 +388,138 @@ export default function UserDashboard() {
 
         </section>
 
-        {/* ================= Continue in Part 2 ================= */}
-                {/* ================= Workspace ================= */}
+        {/* Continue in Part 1B */}
+                {/* ================================= */}
+        {/* Workspace Section */}
+        {/* ================================= */}
 
         <section className="workspace-section">
 
+
           <div className="section-header">
 
-            <h2>Your Workspace</h2>
+            <div>
 
-            <button className="view-all">
+              <h2>
+                Recent Rooms
+              </h2>
+
+              <p>
+                Continue your previous collaborations
+              </p>
+
+            </div>
+
+
+            <Link to="/rooms">
+
               View All
-            </button>
+              <FaArrowRight />
+
+            </Link>
+
 
           </div>
 
-          <div className="workspace-grid">
 
-            <div className="workspace-card purple">
 
-              <div className="workspace-icon">
+          <div className="rooms-grid">
 
-                <FaCode />
+
+            {recentRooms.map((room)=>(
+              
+
+              <div
+                className="room-card"
+                key={room.id}
+              >
+
+
+                <div className="room-top">
+
+
+                  <div className="room-icon">
+
+                    <FaUsers />
+
+                  </div>
+
+
+                  <span
+                    className={
+                      room.status==="Offline"
+                      ?
+                      "offline"
+                      :
+                      "online"
+                    }
+                  >
+
+                    <FaCircle />
+
+                    {room.status}
+
+                  </span>
+
+
+                </div>
+
+
+
+                <h3>
+
+                  {room.room}
+
+                </h3>
+
+
+                <div className="room-info">
+
+
+                  <span>
+
+                    <FaUserFriends />
+
+                    {room.members} Members
+
+                  </span>
+
+
+                  <span>
+
+                    <FaClock />
+
+                    {room.updated}
+
+                  </span>
+
+
+                </div>
+
+
+
+                <button
+                  onClick={()=>
+                    navigate(`/room/${room.id}`)
+                  }
+                  className="enter-room"
+                >
+
+                  Enter Room
+
+                  <FaArrowRight />
+
+                </button>
+
 
               </div>
 
-              <h3>Live Code Editor</h3>
 
-              <p>
-                Collaborate with teammates in a
-                real-time Monaco Editor.
-              </p>
+            ))}
 
-              <button>
-
-                Open Editor
-
-                <FaArrowRight />
-
-              </button>
-
-            </div>
-
-            <div className="workspace-card blue">
-
-              <div className="workspace-icon">
-
-                <FaPaintBrush />
-
-              </div>
-
-              <h3>Collaborative Whiteboard</h3>
-
-              <p>
-                Draw diagrams, brainstorm ideas,
-                and explain concepts visually.
-              </p>
-
-              <button>
-
-                Open Board
-
-                <FaArrowRight />
-
-              </button>
-
-            </div>
-
-            <div className="workspace-card green">
-
-              <div className="workspace-icon">
-
-                <FaComments />
-
-              </div>
-
-              <h3>Team Chat</h3>
-
-              <p>
-                Chat instantly with your team while
-                working together.
-              </p>
-
-              <button>
-
-                Open Chat
-
-                <FaArrowRight />
-
-              </button>
-
-            </div>
-
-            <div className="workspace-card orange">
-
-              <div className="workspace-icon">
-
-                <FaVideo />
-
-              </div>
-
-              <h3>Video Meeting</h3>
-
-              <p>
-                Start HD meetings with screen sharing
-                and collaboration tools.
-              </p>
-
-              <button>
-
-                Start Meeting
-
-                <FaArrowRight />
-
-              </button>
-
-            </div>
 
           </div>
+
 
         </section>
 
@@ -470,67 +527,116 @@ export default function UserDashboard() {
 
 
 
-        {/* ================= Quick Actions ================= */}
+        {/* ================================= */}
+        {/* Quick Actions */}
+        {/* ================================= */}
+
 
         <section className="quick-section">
 
+
           <div className="section-header">
 
-            <h2>Quick Actions</h2>
+
+            <div>
+
+              <h2>
+                Quick Actions
+              </h2>
+
+              <p>
+                Start working instantly
+              </p>
+
+            </div>
+
 
           </div>
+
+
 
           <div className="quick-grid">
 
-            <div className="quick-card">
+
+            <div
+              className="quick-card"
+              onClick={()=>
+                navigate("/rooms")
+              }
+            >
 
               <FaPlus />
 
-              <h3>Create Room</h3>
+
+              <h3>
+                Create Room
+              </h3>
+
 
               <p>
-                Start a new collaboration room.
+                Start a new collaboration space
               </p>
+
 
             </div>
 
-            <div className="quick-card">
 
-              <FaCode />
 
-              <h3>Start Coding</h3>
+
+            <div
+              className="quick-card"
+              onClick={()=>
+                navigate("/code-editor")
+              }
+            >
+
+
+              <FaCodeBranch />
+
+
+              <h3>
+                Code Editor
+              </h3>
+
 
               <p>
-                Open a collaborative code editor.
+                Write and execute code together
               </p>
+
 
             </div>
 
-            <div className="quick-card">
 
-              <FaPaintBrush />
 
-              <h3>Whiteboard</h3>
+
+
+            <div
+              className="quick-card"
+              onClick={()=>
+                navigate("/whiteboard")
+              }
+            >
+
+
+              <FaRocket />
+
+
+              <h3>
+                Whiteboard
+              </h3>
+
 
               <p>
-                Brainstorm and sketch together.
+                Visualize your ideas
               </p>
+
 
             </div>
 
-            <div className="quick-card">
 
-              <FaVideo />
-
-              <h3>Meeting</h3>
-
-              <p>
-                Launch an instant video call.
-              </p>
-
-            </div>
 
           </div>
+
 
         </section>
 
@@ -538,107 +644,85 @@ export default function UserDashboard() {
 
 
 
+        {/* ================================= */}
+        {/* Activity Timeline */}
+        {/* ================================= */}
 
-        {/* ================= Productivity ================= */}
 
-        <section className="productivity">
+
+        <section className="activity-section">
+
 
           <div className="section-header">
 
-            <h2>
 
-              Weekly Productivity
+            <div>
 
-            </h2>
+              <h2>
+                Recent Activity
+              </h2>
 
-            <span>
 
-              Last 7 Days
+              <p>
+                Your latest workspace actions
+              </p>
 
-            </span>
+
+            </div>
+
 
           </div>
 
-          <div className="chart">
 
-            <div className="bar">
 
-              <div
-                className="fill"
-                style={{ height: "70%" }}
-              ></div>
 
-              <span>Mon</span>
+          <div className="activity-card">
 
-            </div>
 
-            <div className="bar">
+            {
+              activities.map((activity,index)=>(
 
-              <div
-                className="fill"
-                style={{ height: "50%" }}
-              ></div>
 
-              <span>Tue</span>
+                <div
+                  className="activity-item"
+                  key={index}
+                >
 
-            </div>
 
-            <div className="bar">
+                  <div className="activity-icon">
 
-              <div
-                className="fill"
-                style={{ height: "90%" }}
-              ></div>
+                    <FaCheckCircle />
 
-              <span>Wed</span>
+                  </div>
 
-            </div>
 
-            <div className="bar">
+                  <div>
 
-              <div
-                className="fill"
-                style={{ height: "60%" }}
-              ></div>
 
-              <span>Thu</span>
+                    <h4>
+                      {activity}
+                    </h4>
 
-            </div>
 
-            <div className="bar">
+                    <span>
 
-              <div
-                className="fill"
-                style={{ height: "85%" }}
-              ></div>
+                      {index+1} hours ago
 
-              <span>Fri</span>
+                    </span>
 
-            </div>
 
-            <div className="bar">
+                  </div>
 
-              <div
-                className="fill"
-                style={{ height: "40%" }}
-              ></div>
 
-              <span>Sat</span>
+                </div>
 
-            </div>
 
-            <div className="bar">
+              ))
+            }
 
-              <div
-                className="fill"
-                style={{ height: "65%" }}
-              ></div>
-
-              <span>Sun</span>
-
-            </div>
 
           </div>
+
 
         </section>
 
@@ -646,431 +730,9 @@ export default function UserDashboard() {
 
 
 
+      </main>
 
-        {/* ================= Main Grid ================= */}
 
-        <section className="dashboard-grid">
-
-  {/* ================= Left Column ================= */}
-
-  <div className="left-column">
-                    {/* ================= Recent Rooms ================= */}
-
-          <div className="card recent-rooms">
-
-            <div className="section-header">
-
-              <h2>Recent Rooms</h2>
-
-              <button className="view-all">
-                View All
-              </button>
-
-            </div>
-
-            <div className="room-list">
-
-              <div className="room-item">
-
-                <div className="room-info">
-
-                  <h3>🚀 React Team</h3>
-
-                  <p>Live Code Editor</p>
-
-                  <small>8 Members • Updated 2 mins ago</small>
-
-                </div>
-
-                <button className="join-btn">
-                  Join
-                </button>
-
-              </div>
-
-              <div className="room-item">
-
-                <div className="room-info">
-
-                  <h3>🎨 UI Designers</h3>
-
-                  <p>Collaborative Whiteboard</p>
-
-                  <small>5 Members • Updated 10 mins ago</small>
-
-                </div>
-
-                <button className="join-btn">
-                  Join
-                </button>
-
-              </div>
-
-              <div className="room-item">
-
-                <div className="room-info">
-
-                  <h3>💻 DSA Practice</h3>
-
-                  <p>Interview Preparation</p>
-
-                  <small>4 Members • Active Now</small>
-
-                </div>
-
-                <button className="join-btn">
-                  Join
-                </button>
-
-              </div>
-
-              <div className="room-item">
-
-                <div className="room-info">
-
-                  <h3>📱 Mobile Team</h3>
-
-                  <p>Flutter Development</p>
-
-                  <small>6 Members • Yesterday</small>
-
-                </div>
-
-                <button className="join-btn">
-                  Join
-                </button>
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-
-
-
-          {/* ================= Team Progress ================= */}
-
-          <div className="card progress-card">
-
-            <div className="section-header">
-
-              <h2>Project Progress</h2>
-
-            </div>
-
-            <div className="progress-item">
-
-              <span>Frontend</span>
-
-              <span>90%</span>
-
-            </div>
-
-            <div className="progress-bar">
-
-              <div
-                className="progress-fill"
-                style={{ width: "90%" }}
-              ></div>
-
-            </div>
-
-            <div className="progress-item">
-
-              <span>Backend</span>
-
-              <span>75%</span>
-
-            </div>
-
-            <div className="progress-bar">
-
-              <div
-                className="progress-fill"
-                style={{ width: "75%" }}
-              ></div>
-
-            </div>
-
-            <div className="progress-item">
-
-              <span>Database</span>
-
-              <span>82%</span>
-
-            </div>
-
-            <div className="progress-bar">
-
-              <div
-                className="progress-fill"
-                style={{ width: "82%" }}
-              ></div>
-
-            </div>
-
-            <div className="progress-item">
-
-              <span>Testing</span>
-
-              <span>65%</span>
-
-            </div>
-
-            <div className="progress-bar">
-
-              <div
-                className="progress-fill"
-                style={{ width: "65%" }}
-              ></div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-
-
-
-        {/* ================= Right Column ================= */}
-
-        <div className="right-column">
-
-          {/* Online Members */}
-
-          <div className="card">
-
-            <div className="section-header">
-
-              <h2>Online Members</h2>
-
-            </div>
-
-            <div className="member-list">
-
-              <div className="member">
-
-                <div className="avatar green">M</div>
-
-                <div>
-
-                  <h4>Mahesh</h4>
-
-                  <small>Working on Dashboard</small>
-
-                </div>
-
-                <span className="online-dot"></span>
-
-              </div>
-
-              <div className="member">
-
-                <div className="avatar blue">A</div>
-
-                <div>
-
-                  <h4>Aditya</h4>
-
-                  <small>Editing Backend</small>
-
-                </div>
-
-                <span className="online-dot"></span>
-
-              </div>
-
-              <div className="member">
-
-                <div className="avatar purple">R</div>
-
-                <div>
-
-                  <h4>Rahul</h4>
-
-                  <small>Whiteboard Session</small>
-
-                </div>
-
-                <span className="online-dot"></span>
-
-              </div>
-
-              <div className="member">
-
-                <div className="avatar orange">P</div>
-
-                <div>
-
-                  <h4>Priya</h4>
-
-                  <small>Design Review</small>
-
-                </div>
-
-                <span className="online-dot"></span>
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-
-
-
-          {/* Today's Meetings */}
-
-          <div className="card">
-
-            <div className="section-header">
-
-              <h2>Today's Meetings</h2>
-
-            </div>
-
-            <div className="meeting">
-
-              <FaClock />
-
-              <div>
-
-                <h4>Frontend Standup</h4>
-
-                <span>10:00 AM</span>
-
-              </div>
-
-            </div>
-
-            <div className="meeting">
-
-              <FaClock />
-
-              <div>
-
-                <h4>Backend Sync</h4>
-
-                <span>2:00 PM</span>
-
-              </div>
-
-            </div>
-
-            <div className="meeting">
-
-              <FaClock />
-
-              <div>
-
-                <h4>Sprint Planning</h4>
-
-                <span>5:30 PM</span>
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-
-
-
-          {/* Recent Activity */}
-
-          <div className="card">
-
-            <div className="section-header">
-
-              <h2>Recent Activity</h2>
-
-            </div>
-
-            <div className="activity">
-
-              <div className="activity-item">
-
-                <div className="activity-dot"></div>
-
-                <div>
-
-                  <h4>Mahesh created React Team</h4>
-
-                  <small>2 minutes ago</small>
-
-                </div>
-
-              </div>
-
-              <div className="activity-item">
-
-                <div className="activity-dot"></div>
-
-                <div>
-
-                  <h4>Whiteboard Updated</h4>
-
-                  <small>10 minutes ago</small>
-
-                </div>
-
-              </div>
-
-              <div className="activity-item">
-
-                <div className="activity-dot"></div>
-
-                <div>
-
-                  <h4>New File Uploaded</h4>
-
-                  <small>25 minutes ago</small>
-
-                </div>
-
-              </div>
-
-              <div className="activity-item">
-
-                <div className="activity-dot"></div>
-
-                <div>
-
-                  <h4>Code Synced Successfully</h4>
-
-                  <small>40 minutes ago</small>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      <footer className="dashboard-footer">
-
-        <p>
-
-          © 2026 SyncSpace • Real-Time Collaboration Platform
-
-        </p>
-
-      </footer>
-
-    </main>
-
-  </div>
-);
+    </div>
+  );
 }
-
