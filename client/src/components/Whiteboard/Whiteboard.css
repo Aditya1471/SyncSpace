@@ -1,0 +1,70 @@
+/* Global Overrides to ensure the whiteboard is borderless and spans the entire screen */
+#root {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  border-inline: none !important;
+  padding: 0 !important;
+  min-height: 100vh !important;
+  display: block !important;
+}
+
+body {
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Whiteboard container - stretches to full viewport */
+.whiteboard-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease;
+}
+
+/* Canvas container with an infinite dot-grid background */
+.whiteboard-canvas-container {
+  width: 100%;
+  height: 100%;
+  background-size: 24px 24px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  transition: background-color 0.3s ease, background-image 0.3s ease;
+}
+
+/* ========================================================
+   Theme Definitions
+   ======================================================== */
+
+/* Dark Theme (Default) */
+.whiteboard-container.theme-dark {
+  background-color: #121214;
+}
+
+.whiteboard-container.theme-dark .whiteboard-canvas-container {
+  background-color: #121214;
+  background-image: radial-gradient(#2d3139 1.2px, transparent 1.2px);
+}
+
+/* Light Theme */
+.whiteboard-container.theme-light {
+  background-color: #ffffff;
+}
+
+.whiteboard-container.theme-light .whiteboard-canvas-container {
+  background-color: #ffffff;
+  background-image: radial-gradient(#e2e8f0 1.2px, transparent 1.2px);
+}
+
+/* Konva Stage styles */
+.konvajs-content {
+  outline: none !important;
+}

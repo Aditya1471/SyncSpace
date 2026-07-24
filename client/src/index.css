@@ -1,11 +1,142 @@
-* {
-  box-sizing: border-box;
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap");
+
+/* ===========================
+   RESET
+=========================== */
+
+*,
+*::before,
+*::after{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
+
+/* ===========================
+   ROOT
+=========================== */
+
+html{
+    font-size:16px;
+    scroll-behavior:smooth;
 }
+
+body{
+    margin:0;
+    padding:0;
+    min-width:320px;
+    min-height:100vh;
+
+    font-family:"Poppins",sans-serif;
+
+    background:#f8f9ff;
+    color:#111827;
+
+    overflow-x:hidden;
+
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+}
+
 #root{
-  width: 100%;
-  min-height: 100vh;
+    width:100%;
+    min-height:100vh;
+}
+
+/* ===========================
+   LINKS
+=========================== */
+
+a{
+    color:inherit;
+    text-decoration:none;
+}
+
+/* ===========================
+   BUTTONS
+=========================== */
+
+button{
+    font:inherit;
+    border:none;
+    outline:none;
+    cursor:pointer;
+    background:none;
+}
+
+/* ===========================
+   FORM ELEMENTS
+=========================== */
+
+input,
+textarea,
+select{
+    font:inherit;
+    outline:none;
+    border:none;
+}
+
+textarea{
+    resize:none;
+}
+
+/* ===========================
+   MEDIA
+=========================== */
+
+img,
+picture,
+video,
+canvas,
+svg{
+    display:block;
+    max-width:100%;
+}
+
+/* ===========================
+   LISTS
+=========================== */
+
+ul,
+ol{
+    list-style:none;
+}
+
+/* ===========================
+   TABLES
+=========================== */
+
+table{
+    border-collapse:collapse;
+    border-spacing:0;
+}
+
+/* ===========================
+   SCROLLBAR
+=========================== */
+
+::-webkit-scrollbar{
+    width:8px;
+}
+
+::-webkit-scrollbar-track{
+    background:#eef2ff;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#8b5cf6;
+    border-radius:20px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background:#7c3aed;
+}
+
+/* ===========================
+   TEXT SELECTION
+=========================== */
+
+::selection{
+    background:#8b5cf6;
+    color:#fff;
 }

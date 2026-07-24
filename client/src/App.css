@@ -1,211 +1,100 @@
-* {
-  box-sizing: border-box;
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #1e1e1e;
+  color: #f3f4f6;
 }
 
-body {
-  overflow-x: hidden;
-}
-
-.header {
-  min-height: 64px;
+.app-header {
+  height: 50px;
+  background-color: #111827;
+  border-bottom: 1px solid #374151;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 24px;
-  padding: 0 24px;
-  background-color: #111827;
-  color: white;
+  padding: 0 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.brand h1 {
-  margin: 0;
-  font-size: 22px;
+.brand {
+  font-size: 18px;
   font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
 }
 
-.header-info {
+.status {
+  font-size: 13px;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.split-screen-layout {
   display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.room-details {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 14px;
-}
-
-.room-id {
-  color: #e5e7eb;
-  font-weight: 600;
-}
-
-.users-count {
-  color: #9ca3af;
-}
-
-.room-button {
-  border: 1px solid #ef4444;
-  border-radius: 6px;
-  padding: 8px 14px;
-  background-color: transparent;
-  color: #f87171;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.room-button:hover {
-  background-color: #ef4444;
-  color: white;
-}
-
-.app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-
-.workspace {
   flex: 1;
-  display: flex;
-  height: calc(100vh - 100px);
-}
-
-
-.sidebar {
-  width: 220px;
-  background-color: #1f2937;
-  color: white;
-  padding: 20px;
-}
-
-
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-
-.sidebar li {
-  padding: 12px;
-  margin-bottom: 8px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-
-.sidebar li:hover {
-  background-color: #374151;
-}
-
-.split-screen {
-  flex: 1;
-  display: flex;
+  width: 100%;
+  height: calc(100vh - 50px);
 }
 
 .panel {
   flex: 1;
-
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  height: 100%;
 }
 
 .whiteboard-panel {
-  background: #f8fafc;
-  color: #111827;
-
-  border-right: 1px solid #d1d5db;
+  background-color: #ffffff;
+  border-right: 1px solid #374151;
 }
 
 .editor-panel {
-  background: #1e1e1e;
-  color: white;
+  background-color: #1e1e1e;
 }
 
-.panel-header {
-  height: 45px;
-
+.panel-title {
+  height: 40px;
+  background-color: #1f2937;
+  color: #e5e7eb;
   display: flex;
   align-items: center;
-
-  padding: 0 20px;
-
+  padding: 0 15px;
+  font-size: 14px;
   font-weight: 600;
-
-  border-bottom: 1px solid #d1d5db;
+  border-bottom: 1px solid #374151;
+  user-select: none;
 }
 
-.panel-content {
-  flex:1;
-  display:flex;
-  flex-direction: column;
-  gap: 8px;
-  justify-content:center;
-  align-items:center;
-
-  font-size:18px;
-  opacity:0.8;
+.canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background-color: #ffffff;
 }
 
-.footer {
-  min-height: 36px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  background-color: #111827;
-  color: #9ca3af;
-  font-size: 12px;
-  border-top: 1px solid #374151;
+.editor-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  height: calc(100% - 40px);
 }
 
-@media(max-width:768px){
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .header-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .room-details {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .workspace {
-    flex-direction: column;
-    height: auto;
-  }
-  .sidebar {
-    width: auto;
-    padding: 8px;
+/* Adjustments for nested Monaco Editor */
+.editor-container > div {
+  height: 100% !important;
 }
 
-.sidebar ul {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-}
-
-.sidebar li {
-  margin: 0;
-  padding: 8px;
-}
-  .split-screen{
-    width: 100%;
+@media (max-width: 768px) {
+  .split-screen-layout {
     flex-direction: column;
   }
-
-  .panel {  
-    min-height: 50vh;
+  .whiteboard-panel {
+    border-right: none;
+    border-bottom: 1px solid #374151;
   }
 }
