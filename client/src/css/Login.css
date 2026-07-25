@@ -183,6 +183,7 @@
   font-size: 0.88rem;
   font-weight: 500;
   color: var(--text-primary);
+  text-align: left;
 }
 
 /* ==========================================================================
@@ -449,12 +450,21 @@
   }
 
   .login-info h1 {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
   }
 
   .info-cards {
     width: 100%;
   }
+
+  .login-info > p {
+    max-width: 420px;
+  }
+
+  .info-cards > div {
+    justify-content: flex-start;
+  }
+
 }
 
 @media (max-width: 480px) {

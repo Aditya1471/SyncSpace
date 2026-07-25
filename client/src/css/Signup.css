@@ -484,7 +484,16 @@
   }
 
   .signup-features {
-    width: 100%;
+    text-align: left;
+    align-items: stretch;
+  }
+
+  .signup-features > div {
+    justify-content: flex-start;
+  }
+
+  .signup-features span {
+    text-align: left;
   }
 }
 
