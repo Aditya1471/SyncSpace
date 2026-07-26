@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { io } from "socket.io-client";
 import "../css/RoomWorkspace.css";
+import Whiteboard from "../components/Whiteboard/Whiteboard";
+
 
 import { 
   Users, Code2, Palette, LogOut, 
@@ -43,13 +45,7 @@ export default function RoomWorkspace() {
     { id: 2, name: "database-schema.sql", size: "14 KB", sender: "Jordan Dev", time: "10:12 AM", type: "code" },
   ]);
 
-  // Canvas State
-  const [brushColor, setBrushColor] = useState("#3b82f6");
-  const [lineWidth, setLineWidth] = useState(3);
-
   // Refs
-  const canvasRef = useRef(null);
-  const isDrawing = useRef(false);
   const socketRef = useRef(null);
   const chatEndRef = useRef(null);
 
@@ -67,33 +63,6 @@ export default function RoomWorkspace() {
       { id: `${Date.now()}-${Math.random()}`, text, type, time: timestamp },
       ...prev.slice(0, 24),
     ]);
-  }, []);
-
-  // Canvas Handlers
-  const drawOnCanvas = useCallback((x, y, type, color = brushColor, width = lineWidth) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.lineWidth = width;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = color;
-
-    if (type === "start") {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    } else if (type === "draw") {
-      ctx.lineTo(x, y);
-      ctx.stroke();
-    }
-  }, [brushColor, lineWidth]);
-
-  const clearCanvasLocally = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
   }, []);
 
   // Socket Real-Time Setup
@@ -123,25 +92,14 @@ export default function RoomWorkspace() {
       }
     });
 
-    socket.on("canvas-draw", (drawData) => {
-      drawOnCanvas(drawData.x, drawData.y, drawData.type, drawData.color, drawData.width);
-    });
-
-    socket.on("canvas-clear", () => {
-      clearCanvasLocally();
-      addActivityLog("Canvas cleared by peer", "canvas");
-    });
-
     return () => {
       socket.emit("leave-room", { roomId });
       socket.off("participants-update");
       socket.off("code-update");
       socket.off("code-activity");
-      socket.off("canvas-draw");
-      socket.off("canvas-clear");
       socket.disconnect();
     };
-  }, [roomId, addActivityLog, drawOnCanvas, clearCanvasLocally]);
+  }, [roomId]);
 
   useEffect(() => {
     if (activeTab === "chat") {
@@ -181,42 +139,7 @@ export default function RoomWorkspace() {
     setChatInput("");
   };
 
-  const getCanvasCoordinates = (e) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { offsetX: 0, offsetY: 0 };
-    const rect = canvas.getBoundingClientRect();
-    return {
-      offsetX: (e.clientX - rect.left) * (canvas.width / rect.width),
-      offsetY: (e.clientY - rect.top) * (canvas.height / rect.height),
-    };
-  };
 
-  const startDrawing = (e) => {
-    isDrawing.current = true;
-    const { offsetX, offsetY } = getCanvasCoordinates(e);
-    drawOnCanvas(offsetX, offsetY, "start", brushColor, lineWidth);
-    socketRef.current?.emit("canvas-draw", { 
-      roomId, 
-      drawData: { x: offsetX, y: offsetY, type: "start", color: brushColor, width: lineWidth } 
-    });
-  };
-
-  const draw = (e) => {
-    if (!isDrawing.current) return;
-    const { offsetX, offsetY } = getCanvasCoordinates(e);
-    drawOnCanvas(offsetX, offsetY, "draw", brushColor, lineWidth);
-    socketRef.current?.emit("canvas-draw", { 
-      roomId, 
-      drawData: { x: offsetX, y: offsetY, type: "draw", color: brushColor, width: lineWidth } 
-    });
-  };
-
-  const stopDrawing = () => { isDrawing.current = false; };
-
-  const handleClearCanvas = () => {
-    clearCanvasLocally();
-    socketRef.current?.emit("canvas-clear", { roomId });
-  };
 
   const lineCount = code.split("\n").length;
   const lineNumbers = Array.from({ length: lineCount }, (_, i) => i + 1);
@@ -411,55 +334,9 @@ export default function RoomWorkspace() {
           )}
 
           {/* TAB 2: Canvas Whiteboard */}
-          {activeTab === "whiteboard" && (
-            <div className="whiteboard-container">
-              <div className="canvas-toolbar">
-                <div className="toolbar-group">
-                  <span className="tool-label">BRUSH COLOR</span>
-                  {["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#ffffff"].map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setBrushColor(color)}
-                      className={`color-swatch ${brushColor === color ? "selected" : ""}`}
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                </div>
-
-                <div className="divider" />
-
-                <div className="toolbar-group">
-                  <span className="tool-label">SIZE</span>
-                  {[2, 4, 8].map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setLineWidth(size)}
-                      className={`size-btn ${lineWidth === size ? "active" : ""}`}
-                    >
-                      {size}px
-                    </button>
-                  ))}
-                </div>
-
-                <div className="divider" />
-
-                <button onClick={handleClearCanvas} className="clear-btn">
-                  <Trash2 size={13} /> Clear Board
-                </button>
-              </div>
-
-              <canvas
-                ref={canvasRef}
-                width={1200}
-                height={800}
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseLeave={stopDrawing}
-                className="canvas-surface"
-              />
-            </div>
-          )}
+          <div style={{ display: activeTab === "whiteboard" ? "block" : "none", height: "100%", width: "100%" }}>
+            <Whiteboard />
+          </div>
 
           {/* TAB 3: Real-Time Chat Panel */}
           {activeTab === "chat" && (

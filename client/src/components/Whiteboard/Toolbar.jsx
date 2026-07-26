@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Maximize2, Minimize2 } from "lucide-react";
 import ToolbarButton from "./ToolbarButton";
 import ColorPicker from "./ColorPicker";
 import StrokeSelector from "./StrokeSelector";
@@ -134,17 +135,6 @@ const TOOL_GROUPS = [
       {
         id: "shapes",
         name: "Shapes",
-      },
-      {
-        id: "text",
-        name: "Text",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="4 7 4 4 20 4 20 7" />
-            <line x1="9" y1="20" x2="15" y2="20" />
-            <line x1="12" y1="4" x2="12" y2="20" />
-          </svg>
-        ),
       },
     ],
   },
@@ -307,6 +297,8 @@ function Toolbar({
   canRedo = false,
   theme = "dark",
   onToggleTheme,
+  isFullscreen = false,
+  onToggleFullscreen,
 }) {
   // Action configurations including dynamic theme switcher
   const actionItems = [
@@ -355,6 +347,20 @@ function Toolbar({
         </svg>
       ),
       onClick: onToggleTheme,
+    },
+    {
+      id: "enter-fullscreen",
+      name: "Enter Fullscreen",
+      icon: <Maximize2 size={20} />,
+      onClick: onToggleFullscreen,
+      hidden: isFullscreen,
+    },
+    {
+      id: "exit-fullscreen",
+      name: "Exit Fullscreen",
+      icon: <Minimize2 size={20} />,
+      onClick: onToggleFullscreen,
+      hidden: !isFullscreen,
     },
     {
       id: "delete",
@@ -445,7 +451,7 @@ function Toolbar({
       {/* Action Group */}
       <div className="toolbar-separator" />
       <div className="toolbar-group">
-        {actionItems.map((action) => (
+        {actionItems.filter((action) => !action.hidden).map((action) => (
           <ToolbarButton
             key={action.id}
             id={action.id}
