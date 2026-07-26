@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Stage, Layer, Line, Rect, Ellipse, Arrow, Transformer } from "react-konva";
 import Toolbar from "./Toolbar";
 import "./Whiteboard.css";
@@ -136,6 +136,7 @@ const elementIntersectsPoint = (p, element) => {
     return outerDist <= 1.0;
   }
 
+
   if (type === "line" || type === "arrow") {
     const a = { x, y };
     const b = { x: x + width, y: y + height };
@@ -152,9 +153,15 @@ function Whiteboard() {
   // Selection state
   const [selectedId, setSelectedId] = useState(null);
 
+  // Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   // Refs for Konva nodes
   const stageRef = useRef(null);
   const transformerRef = useRef(null);
+  const containerRef = useRef(null);
+  const whiteboardRef = useRef(null);
+
 
   // Undo/Redo stacks
   const [undoStack, setUndoStack] = useState([]);
@@ -166,9 +173,6 @@ function Whiteboard() {
   // Active Tool and Style states
   const [selectedTool, setSelectedTool] = useState("pencil");
   const [selectedShape, setSelectedShape] = useState("rectangle");
-  const [shapeConfig, setShapeConfig] = useState({
-    fillEnabled: true,
-  });
 
   // Future architecture shape factory
   const shapeFactory = useRef({
@@ -183,14 +187,7 @@ function Whiteboard() {
     }),
   }).current;
 
-  // Adapt shapeConfig when selectedShape changes
-  useEffect(() => {
-    const isClosed = ["rectangle", "circle", "diamond", "triangle", "hexagon", "star"].includes(selectedShape);
-    setShapeConfig((prev) => ({
-      ...prev,
-      fillEnabled: isClosed,
-    }));
-  }, [selectedShape]);
+
 
   // Default stroke is light slate/white for dark mode theme
   const [strokeColor, setStrokeColor] = useState("#f8fafc"); 
@@ -220,6 +217,39 @@ function Whiteboard() {
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Listen to browser fullscreen changes to sync toggle state and stage dimensions
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+      );
+      setIsFullscreen(isCurrentlyFullscreen);
+
+      // Force recalculation of stage dimensions once layout settles
+      setTimeout(() => {
+        setDimensions({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+      }, 50);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+    document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+      document.removeEventListener("mozfullscreenchange", handleFullscreenChange);
+      document.removeEventListener("MSFullscreenChange", handleFullscreenChange);
+    };
   }, []);
 
   // Reset selection when tool changes
@@ -276,6 +306,7 @@ function Whiteboard() {
       eraseAtPosition(relativePos);
       return;
     }
+
 
     // Select Mode click-off deselect
     if (selectedTool === "select") {
@@ -451,13 +482,40 @@ function Whiteboard() {
   };
 
   // Delete Selection Action
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (!selectedId) return;
     setUndoStack((prev) => [...prev, [...lines]]);
     setRedoStack([]);
     setLines((prev) => prev.filter((line) => line.id !== selectedId));
     setSelectedId(null);
-  };
+  }, [selectedId, lines]);
+
+  // Fullscreen Toggle Action
+  const handleToggleFullscreen = useCallback(() => {
+    if (!whiteboardRef.current) return;
+
+    if (!isFullscreen) {
+      const element = whiteboardRef.current;
+      const requestFullscreen =
+        element.requestFullscreen ||
+        element.webkitRequestFullscreen ||
+        element.mozRequestFullScreen ||
+        element.msRequestFullscreen;
+      if (requestFullscreen) {
+        requestFullscreen.call(element);
+      }
+    } else {
+      const exitFullscreen =
+        document.exitFullscreen ||
+        document.webkitExitFullscreen ||
+        document.mozCancelFullScreen ||
+        document.msExitFullscreen;
+      if (exitFullscreen) {
+        exitFullscreen.call(document);
+      }
+    }
+  }, [isFullscreen]);
+
 
   // Drag Panning event for infinite canvas
   const handleDragStage = (e) => {
@@ -504,7 +562,7 @@ function Whiteboard() {
   };
 
   // Selection Resizing Handlers
-  const handleTransformStart = (e) => {
+  const handleTransformStart = () => {
     setUndoStack((prev) => [...prev, [...lines]]);
     setRedoStack([]);
   };
@@ -537,8 +595,8 @@ function Whiteboard() {
               ...line,
               x: node.x(),
               y: node.y(),
-              width: line.width * scaleX,
-              height: line.height * scaleY,
+              width: (line.width || 0) * scaleX,
+              height: (line.height || 0) * scaleY,
             };
           }
         }
@@ -559,7 +617,7 @@ function Whiteboard() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedId, lines]);
+  }, [selectedId, handleDelete]);
 
   // Bind Transformer dynamically to the active selected shape Konva node
   useEffect(() => {
@@ -770,7 +828,7 @@ function Whiteboard() {
   };
 
   return (
-    <div className={`whiteboard-container theme-${theme}`}>
+    <div ref={whiteboardRef} className={`whiteboard-container theme-${theme}`}>
       <Toolbar
         selectedTool={selectedTool}
         setSelectedTool={setSelectedTool}
@@ -791,10 +849,13 @@ function Whiteboard() {
         canRedo={redoStack.length > 0}
         theme={theme}
         onToggleTheme={handleToggleTheme}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={handleToggleFullscreen}
       />
 
       {/* Infinite scrolling grid container wrapper */}
       <div
+        ref={containerRef}
         className="whiteboard-canvas-container"
         style={{
           backgroundPosition: `${stagePos.x}px ${stagePos.y}px`,
@@ -813,6 +874,7 @@ function Whiteboard() {
           onMouseUp={handleMouseUp}
           style={{
             background: "transparent",
+            cursor: selectedTool === "select" ? "default" : "crosshair",
           }}
         >
           <Layer>
@@ -847,6 +909,8 @@ function Whiteboard() {
             )}
           </Layer>
         </Stage>
+
+
       </div>
     </div>
   );
