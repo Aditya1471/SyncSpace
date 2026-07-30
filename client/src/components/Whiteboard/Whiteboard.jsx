@@ -146,9 +146,42 @@ const elementIntersectsPoint = (p, element) => {
   return false;
 };
 
-function Whiteboard() {
+function Whiteboard({ socket, roomId }) {
   // Elements state
   const [lines, setLines] = useState([]);
+  const isIncomingUpdate = useRef(false);
+
+  // Listen for remote draw updates
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("canvas-draw", (data) => {
+      isIncomingUpdate.current = true;
+      setLines(data);
+    });
+
+    socket.on("canvas-clear", () => {
+      isIncomingUpdate.current = true;
+      setLines([]);
+    });
+
+    return () => {
+      socket.off("canvas-draw");
+      socket.off("canvas-clear");
+    };
+  }, [socket]);
+
+  // Emit local changes to room
+  useEffect(() => {
+    if (!socket || !roomId) return;
+
+    if (isIncomingUpdate.current) {
+      isIncomingUpdate.current = false;
+      return;
+    }
+
+    socket.emit("canvas-draw", { roomId, drawData: lines });
+  }, [lines, socket, roomId]);
   
   // Selection state
   const [selectedId, setSelectedId] = useState(null);

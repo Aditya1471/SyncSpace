@@ -85,6 +85,20 @@ export default function RoomWorkspace() {
 
     socket.on("code-update", (updatedCode) => setCode(updatedCode));
 
+    socket.on("chat-message", (newMsg) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-${Math.random()}`,
+          sender: newMsg.username,
+          text: newMsg.message,
+          time: new Date(newMsg.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          isSystem: false,
+        }
+      ]);
+      addActivityLog(`${newMsg.username} sent a message`, "chat");
+    });
+
     socket.on("code-activity", ({ user }) => {
       if (user !== storedUser) {
         setIsPeerTyping(`${user} is editing...`);
@@ -97,6 +111,7 @@ export default function RoomWorkspace() {
       socket.emit("leave-room", { roomId });
       socket.off("participants-update");
       socket.off("code-update");
+      socket.off("chat-message");
       socket.off("code-activity");
       socket.disconnect();
     };
@@ -136,15 +151,14 @@ export default function RoomWorkspace() {
     e.preventDefault();
     if (!chatInput.trim()) return;
 
-    const newMsg = {
-      id: Date.now(),
-      sender: username,
-      text: chatInput.trim(),
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      isSystem: false,
-    };
+    if (socketRef.current) {
+      socketRef.current.emit("chat-message", {
+        roomId,
+        username,
+        message: chatInput.trim(),
+      });
+    }
 
-    setMessages((prev) => [...prev, newMsg]);
     setChatInput("");
   };
 
@@ -336,7 +350,7 @@ export default function RoomWorkspace() {
 
           {/* TAB 2: Canvas Whiteboard */}
           <div style={{ display: activeTab === "whiteboard" ? "block" : "none", height: "100%", width: "100%" }}>
-            <Whiteboard />
+            <Whiteboard socket={socketRef.current} roomId={roomId} />
           </div>
 
           {/* TAB 3: Real-Time Chat Panel */}
