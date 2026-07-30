@@ -1046,6 +1046,8 @@ opacity:.3;
 
 .premium-workspace{
     flex-direction:column;
+    height:auto;
+    overflow:auto;
 }
 
 .premium-sidebar{
