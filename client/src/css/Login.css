@@ -45,7 +45,7 @@
   justify-content: center;
   background-color: var(--bg-main);
   padding: 2rem;
-  overflow: hidden;
+  overflow: auto;
 }
 
 /* Ambient Background Glow Effects */
