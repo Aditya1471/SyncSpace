@@ -115,21 +115,27 @@ table{
    SCROLLBAR
 =========================== */
 
-::-webkit-scrollbar{
-    width:8px;
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-::-webkit-scrollbar-track{
-    background:#eef2ff;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-::-webkit-scrollbar-thumb{
-    background:#8b5cf6;
-    border-radius:20px;
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
 }
 
-::-webkit-scrollbar-thumb:hover{
-    background:#7c3aed;
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.45);
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 /* ===========================
