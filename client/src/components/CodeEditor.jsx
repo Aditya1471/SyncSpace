@@ -7,7 +7,7 @@ function CodeEditor({ language, value, onChange }) {
 // TODO: Connect Y-WebSocket provider
 // TODO: Synchronize editor content using Yjs
 // TODO: Show remote user cursors and presence
-      height="100vh"
+      height="100%"
       language={language}
       value={value}
       theme="vs-dark"

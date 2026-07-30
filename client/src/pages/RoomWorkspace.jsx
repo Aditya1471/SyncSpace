@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { io } from "socket.io-client";
 import "../css/RoomWorkspace.css";
 import Whiteboard from "../components/Whiteboard/Whiteboard";
+import CodeEditor from "../components/CodeEditor";
 
 
 import { 
@@ -119,6 +120,14 @@ export default function RoomWorkspace() {
     setCode(newCode);
     if (socketRef.current) {
       socketRef.current.emit("code-change", { roomId, code: newCode });
+      socketRef.current.emit("code-typing", { roomId, user: username });
+    }
+  };
+
+  const handleMonacoCodeChange = (newVal) => {
+    setCode(newVal);
+    if (socketRef.current) {
+      socketRef.current.emit("code-change", { roomId, code: newVal });
       socketRef.current.emit("code-typing", { roomId, user: username });
     }
   };
@@ -307,19 +316,11 @@ export default function RoomWorkspace() {
                 <span className="lang-tag">JavaScript ES6</span>
               </div>
 
-              <div className="editor-body">
-                <div className="line-numbers">
-                  {lineNumbers.map((num) => (
-                    <span key={num}>{num}</span>
-                  ))}
-                </div>
-
-                <textarea
+              <div className="editor-body" style={{ height: "calc(100% - 70px)", padding: 0 }}>
+                <CodeEditor
+                  language="javascript"
                   value={code}
-                  onChange={handleCodeChange}
-                  placeholder="// Type code here..."
-                  className="code-input"
-                  spellCheck="false"
+                  onChange={handleMonacoCodeChange}
                 />
               </div>
 
