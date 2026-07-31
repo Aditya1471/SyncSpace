@@ -1,0 +1,11 @@
+{
+  expandedFolders,
+  toggleFolder(),
+  createFolder(),
+  createFile(),
+  deleteNode(),
+  renameNode(),
+  moveNode(),
+  dragAndDrop(),
+  searchExplorer()
+}

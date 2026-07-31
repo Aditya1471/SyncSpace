@@ -1,0 +1,97 @@
+.settings-overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.55);
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:6000;
+}
+
+.settings-window{
+width:700px;
+background:#252526;
+border-radius:10px;
+overflow:hidden;
+color:white;
+}
+
+.settings-header{
+padding:20px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:1px solid #333;
+}
+
+.settings-header button{
+background:none;
+border:none;
+color:white;
+cursor:pointer;
+}
+
+.settings-body{
+padding:20px;
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:18px;
+}
+
+.setting,
+.toggle{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:12px;
+background:#2d2d30;
+border-radius:6px;
+}
+
+.setting label,
+.toggle label{
+display:flex;
+align-items:center;
+gap:8px;
+}
+
+.setting input,
+.setting select{
+width:180px;
+background:#1e1e1e;
+color:white;
+border:1px solid #444;
+padding:8px;
+border-radius:4px;
+}
+
+.settings-footer{
+padding:18px;
+display:flex;
+justify-content:flex-end;
+gap:12px;
+border-top:1px solid #333;
+}
+
+.reset-btn,
+.save-btn{
+padding:10px 18px;
+border:none;
+cursor:pointer;
+border-radius:5px;
+font-weight:600;
+}
+
+.reset-btn{
+background:#444;
+color:white;
+}
+
+.save-btn{
+background:#007acc;
+color:white;
+}
+
+.save-btn:hover{
+background:#0e639c;
+}

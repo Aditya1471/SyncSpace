@@ -5,216 +5,494 @@ import http from "http";
 import { Server } from "socket.io";
 import helmet from "helmet";
 import morgan from "morgan";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import connectDB from "./config/db.js";
 
-// Routes
-import authRoutes from "./routes/authRoutes.js";
 
-// Socket Handler
+// ===============================
+// Routes
+// ===============================
+
+import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import roomRoutes from "./routes/roomRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
+import editorRoutes from "./routes/editorRoutes.js";
+import fileRoutes from "./routes/fileRoutes.js";
+import folderRoutes from "./routes/folderRoutes.js";
+import runRoutes from "./routes/runRoutes.js";
+import terminalRoutes from "./routes/terminalRoutes.js";
+import settingsRoutes from "./routes/settingsRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
+
+
+// ===============================
+// Socket
+// ===============================
+
 import socketHandler from "./socket/socketHandler.js";
 
+
+// ===============================
 // Middleware
+// ===============================
+
+import notFound from "./middleware/notFound.js";
 import errorHandler from "./middleware/errorHandler.js";
+
+
 
 dotenv.config();
 
+
+
+
 // ===============================
-// Database Connection
+// Database
 // ===============================
+
 connectDB();
+
+
+
+
+// ===============================
+// Express App
+// ===============================
 
 const app = express();
 
-// ===============================
-// Create HTTP Server
-// ===============================
-const server = http.createServer(app);
+
+
+
 
 // ===============================
-// Socket.io Setup
+// HTTP SERVER
 // ===============================
-const io = new Server(server, {
-  cors: {
-    origin: process.env.CLIENT_URL || process.env.CLIENT_ORIGIN || "*",
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
+
+const server =
+http.createServer(app);
+
+
+
+
+
+// ===============================
+// Socket.IO Setup
+// ===============================
+
+const io =
+new Server(server,{
+
+    cors:{
+
+        origin:
+        process.env.CLIENT_URL ||
+        process.env.CLIENT_ORIGIN ||
+        "http://localhost:5173",
+
+        methods:[
+            "GET",
+            "POST"
+        ],
+
+        credentials:true
+
+    }
+
 });
 
+
+
+
+
+
 // ===============================
-// Security Middleware
+// Security
 // ===============================
-app.use(helmet());
+
+app.use(
+
+    helmet({
+
+        crossOriginResourcePolicy:false
+
+    })
+
+);
+
+
+
+
 
 // ===============================
 // Logger
 // ===============================
-app.use(morgan("dev"));
+
+app.use(
+    morgan("dev")
+);
+
+
+
+
+
 
 // ===============================
 // CORS
 // ===============================
+
 app.use(
-  cors({
-    origin: process.env.CLIENT_URL || process.env.CLIENT_ORIGIN || "*",
-    credentials: true,
-  })
+
+    cors({
+
+        origin:
+        process.env.CLIENT_URL ||
+        process.env.CLIENT_ORIGIN ||
+        "http://localhost:5173",
+
+
+        credentials:true
+
+    })
+
 );
+
+
+
+
+
 
 // ===============================
 // Body Parser
 // ===============================
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+app.use(
+
+    express.json({
+
+        limit:"50mb"
+
+    })
+
+);
+
+
+
+app.use(
+
+    express.urlencoded({
+
+        extended:true,
+
+        limit:"50mb"
+
+    })
+
+);
+
+
+
+
+
+
 
 // ===============================
-// In-Memory Room Data Store
-// ===============================
-// Structure: roomId -> { roomName, createdBy, code, chatHistory: [], participants: Map(socketId -> username) }
-export const rooms = new Map();
-
-// ===============================
-// Make Socket.io & Rooms available on req
-// ===============================
-app.use((req, res, next) => {
-  req.io = io;
-  req.rooms = rooms;
-  next();
-});
-
-// ===============================
-// Home & Health Routes
-// ===============================
-app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "🚀 SyncSpace Backend Running Successfully",
-  });
-});
-
-app.get("/api/health", (req, res) => {
-  res.status(200).json({
-    success: true,
-    status: "Healthy",
-    message: "SyncSpace Server Running",
-  });
-});
-
-// ===============================
-// API Routes
+// Static Upload Folder
 // ===============================
 
-// Authentication
-app.use("/api/auth", authRoutes);
 
-// Rooms REST API
-app.post("/api/rooms", (req, res) => {
-  const { roomId, roomName, createdBy } = req.body;
-  if (!roomId || !roomName) {
-    return res.status(400).json({
-      success: false,
-      message: "Room ID and Room Name are required.",
-    });
-  }
+const __filename =
+fileURLToPath(import.meta.url);
 
-  if (!rooms.has(roomId)) {
-    rooms.set(roomId, {
-      roomName,
-      createdBy: createdBy || "Anonymous",
-      code: "// Welcome to SyncSpace Collaborative Workspace\n// Upload a file or start typing to sync live...\n",
-      chatHistory: [],
-      participants: new Map(),
-    });
-  }
 
-  return res.status(201).json({
-    success: true,
-    data: {
-      roomId,
-      roomName,
-      createdBy,
-    },
-  });
-});
+const __dirname =
+path.dirname(__filename);
 
-app.get("/api/rooms/:roomId", (req, res) => {
-  const { roomId } = req.params;
-  const room = rooms.get(roomId);
 
-  if (!room) {
-    return res.status(404).json({
-      success: false,
-      message: "Room not found.",
-    });
-  }
 
-  return res.json({
-    success: true,
-    data: {
-      roomId,
-      roomName: room.roomName,
-      createdBy: room.createdBy,
-      participantsCount: room.participants.size,
-    },
-  });
-});
+app.use(
 
-app.post("/api/rooms/:roomId/leave", (req, res) => {
-  const { roomId } = req.params;
-  const { username } = req.body;
+    "/uploads",
 
-  const room = rooms.get(roomId);
-  if (room) {
-    for (const [socketId, user] of room.participants.entries()) {
-      if (user === username) {
-        room.participants.delete(socketId);
-        break;
-      }
+    express.static(
+
+        path.join(
+            __dirname,
+            "uploads"
+        )
+
+    )
+
+);
+
+
+
+
+
+
+
+
+
+// ===============================
+// Share Socket With Controllers
+// ===============================
+
+
+app.use(
+
+    (req,res,next)=>{
+
+
+        req.io = io;
+
+
+        next();
+
+
     }
-  }
 
-  return res.json({ success: true });
-});
+);
 
-// ===============================
-// Socket Handler Integration
-// ===============================
-// Passes 'io' and the shared 'rooms' map to your modular socket handler
-socketHandler(io, rooms);
 
-// ===============================
-// 404 Route
-// ===============================
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "API Route Not Found",
-  });
-});
+
+
+
+
+
+
 
 // ===============================
-// Global Error Handler
+// Home Route
 // ===============================
-app.use(errorHandler);
+
+
+app.get(
+
+    "/",
+
+    (req,res)=>{
+
+
+        res.json({
+
+            success:true,
+
+            message:
+            "🚀 SyncSpace Backend Running"
+
+        });
+
+
+    }
+
+);
+
+
+
+
+
+
+
+
 
 // ===============================
-// Start Server
+// Health Check
 // ===============================
-const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-  console.log(`
+
+app.get(
+
+    "/api/health",
+
+    (req,res)=>{
+
+
+        res.status(200)
+        .json({
+
+            success:true,
+
+            status:
+            "Healthy",
+
+            message:
+            "SyncSpace Server Running"
+
+        });
+
+
+    }
+
+);
+
+
+
+
+
+
+
+
+
+// ===============================
+// API ROUTES
+// ===============================
+
+
+
+app.use(
+    "/api/auth",
+    authRoutes
+);
+
+
+app.use(
+    "/api/users",
+    userRoutes
+);
+
+
+app.use(
+    "/api/rooms",
+    roomRoutes
+);
+
+
+app.use(
+    "/api/chat",
+    chatRoutes
+);
+
+
+app.use(
+    "/api/editor",
+    editorRoutes
+);
+
+
+app.use(
+    "/api/files",
+    fileRoutes
+);
+
+
+app.use(
+    "/api/folders",
+    folderRoutes
+);
+
+
+app.use(
+    "/api/run",
+    runRoutes
+);
+
+
+app.use(
+    "/api/terminal",
+    terminalRoutes
+);
+
+
+app.use(
+    "/api/settings",
+    settingsRoutes
+);
+
+
+app.use(
+    "/api/upload",
+    uploadRoutes
+);
+
+
+
+
+
+
+
+
+
+// ===============================
+// Socket Handler
+// ===============================
+
+
+socketHandler(io);
+
+
+
+
+
+
+
+
+
+// ===============================
+// 404 Handler
+// ===============================
+
+
+app.use(
+    notFound
+);
+
+
+
+
+// ===============================
+// Error Handler
+// ===============================
+
+
+app.use(
+    errorHandler
+);
+
+
+
+
+
+
+
+
+
+// ===============================
+// START SERVER
+// ===============================
+
+
+const PORT =
+process.env.PORT || 5000;
+
+
+
+server.listen(
+
+    PORT,
+
+    ()=>{
+
+
+        console.log(`
 ==========================================
-🚀 SyncSpace Backend Started Successfully
+🚀 SyncSpace Backend Started
 ==========================================
 🌐 Port       : ${PORT}
-🛢️ Database   : MongoDB
-⚡ Socket.io  : Running
+🛢 Database   : MongoDB
+⚡ Socket.IO  : Enabled
 🔐 Auth       : Enabled
 🏠 Rooms      : Enabled
 💬 Chat       : Enabled
+📝 Editor     : Enabled
 🎨 Whiteboard : Enabled
+⌨ Terminal   : Enabled
 ==========================================
-`);
-});
+        `);
+
+
+    }
+
+);

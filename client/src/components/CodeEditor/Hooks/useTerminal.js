@@ -1,0 +1,12 @@
+{
+  history,
+  currentCommand,
+  execute(),
+  clear(),
+  stopExecution(),
+  commandHistory,
+  autocomplete(),
+  terminals,
+  createTerminal(),
+  closeTerminal()
+}

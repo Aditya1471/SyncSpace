@@ -1,13 +1,41 @@
-// utils/asyncHandler.js
+/*
+===================================================
+ASYNC ERROR HANDLER
+===================================================
+
+Purpose:
+- Avoid repeating try/catch in every controller
+- Automatically forward errors to Express error middleware
+
+Usage:
+
+export const controller =
+asyncHandler(async(req,res)=>{
+
+    // your code
+
+});
+
+===================================================
+*/
+
 
 const asyncHandler = (fn) => {
-  return async (req, res, next) => {
-    try {
-      await Promise.resolve(fn(req, res, next));
-    } catch (error) {
-      next(error);
-    }
-  };
+
+    return (req, res, next) => {
+
+        Promise
+            .resolve(
+                fn(req, res, next)
+            )
+            .catch(
+                next
+            );
+
+    };
+
 };
+
+
 
 export default asyncHandler;

@@ -1,0 +1,14 @@
+{
+  files,
+  activeFile,
+  activeFileId,
+  updateFile(),
+  addFile(),
+  deleteFile(),
+  renameFile(),
+  duplicateFile(),
+  saveFile(),
+  formatCode(),
+  openFile(),
+  closeFile()
+}

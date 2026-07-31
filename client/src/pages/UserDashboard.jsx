@@ -22,6 +22,8 @@ import {
   FaUserFriends,
   FaCheckCircle,
   FaCircle,
+  FaCode,
+  FaPaintBrush,
 } from "react-icons/fa";
 
 export default function UserDashboard() {
@@ -121,89 +123,70 @@ export default function UserDashboard() {
       {/* ================================= */}
 
       <aside className="sidebar">
+  <div>
+    {/* Logo */}
+    <div className="logo">
+      <FaCodeBranch className="logo-icon" />
+      <h2>SyncSpace</h2>
+    </div>
 
-        <div>
+    {/* Sidebar Menu */}
+    <ul className="menu">
 
-          <div className="logo">
+      {/* Dashboard */}
+      <li className="active">
+        <FaHome />
+        <span>Dashboard</span>
+      </li>
 
-            <FaCodeBranch className="logo-icon" />
+      {/* Rooms */}
+      <li>
+        <Link to="/rooms" className="sidebar-link">
+          <FaUsers />
+          <span>Rooms</span>
+        </Link>
+      </li>
 
-            <h2>SyncSpace</h2>
+      {/* Code Editor */}
+      <li>
+  <Link to="/code-editor" className="sidebar-link">
+    <FaCode />
+    <span>Code Editor</span>
+  </Link>
+</li>
 
-          </div>
+      {/* Whiteboard */}
+      <li>
+  <Link to="/whiteboard" className="sidebar-link">
+    <FaPaintBrush />
+    <span>Whiteboard</span>
+  </Link>
+</li>
 
-          <ul className="menu">
+      {/* Profile (No Navigation) */}
+      <li>
+        <FaUserCircle />
+        <span>Profile</span>
+      </li>
 
-            <li className="active">
+      {/* Settings (No Navigation) */}
+      <li>
+        <FaCog />
+        <span>Settings</span>
+      </li>
 
-              <FaHome />
+    </ul>
+  </div>
 
-              <span>Dashboard</span>
-
-            </li>
-
-            <li>
-
-              <Link
-                to="/rooms"
-                className="sidebar-link"
-              >
-
-                <FaUsers />
-
-                <span>Rooms</span>
-
-              </Link>
-
-            </li>
-
-            <li>
-
-              <Link
-                to="/profile"
-                className="sidebar-link"
-              >
-
-                <FaUserCircle />
-
-                <span>Profile</span>
-
-              </Link>
-
-            </li>
-
-            <li>
-
-              <Link
-                to="/settings"
-                className="sidebar-link"
-              >
-
-                <FaCog />
-
-                <span>Settings</span>
-
-              </Link>
-
-            </li>
-
-          </ul>
-
-        </div>
-
-        <button
-          className="logout-btn"
-          onClick={handleLogout}
-        >
-
-          <FaSignOutAlt />
-
-          Logout
-
-        </button>
-
-      </aside>
-
+  {/* Logout */}
+  <button
+    className="logout-btn"
+    onClick={handleLogout}
+  >
+    <FaSignOutAlt />
+    Logout
+  </button>
+</aside>
       {/* ================================= */}
       {/* Main */}
       {/* ================================= */}
@@ -393,136 +376,83 @@ export default function UserDashboard() {
         {/* Workspace Section */}
         {/* ================================= */}
 
-        <section className="workspace-section">
+       <section className="workspace-section">
 
+  <div className="section-header">
 
-          <div className="section-header">
+    <div>
+      <h2>Recent Rooms</h2>
 
-            <div>
+      <p>
+        Continue your previous collaborations
+      </p>
+    </div>
 
-              <h2>
-                Recent Rooms
-              </h2>
+    <div className="view-all-btn">
+      View All
+      <FaArrowRight />
+    </div>
 
-              <p>
-                Continue your previous collaborations
-              </p>
+  </div>
 
-            </div>
+  <div className="rooms-grid">
 
+    {recentRooms.map((room) => (
 
-            <Link to="/rooms">
+      <div
+        className="room-card"
+        key={room.id}
+      >
 
-              View All
-              <FaArrowRight />
+        <div className="room-top">
 
-            </Link>
-
-
+          <div className="room-icon">
+            <FaUsers />
           </div>
 
+          <span
+            className={
+              room.status === "Offline"
+                ? "offline"
+                : "online"
+            }
+          >
+            <FaCircle />
+            {room.status}
+          </span>
 
+        </div>
 
-          <div className="rooms-grid">
+        <h3>{room.room}</h3>
 
+        <div className="room-info">
 
-            {recentRooms.map((room)=>(
-              
+          <span>
+            <FaUserFriends />
+            {room.members} Members
+          </span>
 
-              <div
-                className="room-card"
-                key={room.id}
-              >
+          <span>
+            <FaClock />
+            {room.updated}
+          </span>
 
+        </div>
 
-                <div className="room-top">
+        <button
+          className="enter-room"
+        >
+          Enter Room
+          <FaArrowRight />
+        </button>
 
+      </div>
 
-                  <div className="room-icon">
+    ))}
 
-                    <FaUsers />
+  </div>
 
-                  </div>
-
-
-                  <span
-                    className={
-                      room.status==="Offline"
-                      ?
-                      "offline"
-                      :
-                      "online"
-                    }
-                  >
-
-                    <FaCircle />
-
-                    {room.status}
-
-                  </span>
-
-
-                </div>
-
-
-
-                <h3>
-
-                  {room.room}
-
-                </h3>
-
-
-                <div className="room-info">
-
-
-                  <span>
-
-                    <FaUserFriends />
-
-                    {room.members} Members
-
-                  </span>
-
-
-                  <span>
-
-                    <FaClock />
-
-                    {room.updated}
-
-                  </span>
-
-
-                </div>
-
-
-
-                <button
-                  onClick={()=>
-                    navigate(`/room/${room.id}`)
-                  }
-                  className="enter-room"
-                >
-
-                  Enter Room
-
-                  <FaArrowRight />
-
-                </button>
-
-
-              </div>
-
-
-            ))}
-
-
-          </div>
-
-
-        </section>
-
+</section>
 
 
 

@@ -1,7 +1,5 @@
 import express from "express";
 
-import validateRoom from "../middleware/validateRoom.js";
-
 import {
   createRoom,
   getRooms,
@@ -14,45 +12,131 @@ import {
   deactivateRoom,
 } from "../controllers/roomController.js";
 
+
+import { protect } from "../middleware/authMiddleware.js";
+
+import validateRoom from "../middleware/validateRoom.js";
+
+
 const router = express.Router();
 
+
+
+
+
 /*
-=========================================
-Room CRUD APIs
-=========================================
+=================================================
+ROOM MANAGEMENT ROUTES
+=================================================
 */
+
 
 // Create Room
-router.post("/", validateRoom, createRoom);
+// POST /api/rooms
+router.post(
+  "/",
+  protect,
+  validateRoom,
+  createRoom
+);
+
+
+
 
 // Get All Rooms
-router.get("/", getRooms);
+// GET /api/rooms
+router.get(
+  "/",
+  protect,
+  getRooms
+);
+
+
+
 
 // Get Active Rooms
-router.get("/active", getActiveRooms);
+// GET /api/rooms/active
+router.get(
+  "/active",
+  protect,
+  getActiveRooms
+);
+
+
+
 
 // Get Single Room
-router.get("/:roomId", getRoomById);
+// GET /api/rooms/:roomId
+router.get(
+  "/:roomId",
+  protect,
+  getRoomById
+);
+
+
+
 
 // Update Room
-router.put("/:roomId", updateRoom);
+// PUT /api/rooms/:roomId
+router.put(
+  "/:roomId",
+  protect,
+  updateRoom
+);
+
+
+
 
 // Delete Room
-router.delete("/:roomId", deleteRoom);
+// DELETE /api/rooms/:roomId
+router.delete(
+  "/:roomId",
+  protect,
+  deleteRoom
+);
+
+
+
+
 
 /*
-=========================================
-Socket Ready APIs
-=========================================
+=================================================
+COLLABORATION ROUTES
+(Socket.IO Ready)
+=================================================
 */
 
+
 // Join Room
-router.post("/:roomId/join", joinRoom);
+// POST /api/rooms/:roomId/join
+router.post(
+  "/:roomId/join",
+  protect,
+  joinRoom
+);
+
+
+
 
 // Leave Room
-router.post("/:roomId/leave", leaveRoom);
+// POST /api/rooms/:roomId/leave
+router.post(
+  "/:roomId/leave",
+  protect,
+  leaveRoom
+);
+
+
+
 
 // Deactivate Room
-router.patch("/:roomId/deactivate", deactivateRoom);
+// PATCH /api/rooms/:roomId/deactivate
+router.patch(
+  "/:roomId/deactivate",
+  protect,
+  deactivateRoom
+);
+
+
 
 export default router;

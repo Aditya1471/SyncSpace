@@ -1,0 +1,10 @@
+{
+  openTabs,
+  activeTab,
+  pinTab(),
+  closeTab(),
+  closeOthers(),
+  closeAll(),
+  reopenClosed(),
+  moveTab()
+}
