@@ -1,0 +1,497 @@
+/* ==========================================
+   SYNCSPACE IDE - PREMIUM ACTIVITY BAR
+========================================== */
+
+
+.activity-bar {
+
+
+    width:64px;
+
+
+    height:100vh;
+
+
+    flex-shrink:0;
+
+
+    background:
+    linear-gradient(
+        180deg,
+        #111827,
+        #020617
+    );
+
+
+    border-right:
+
+    1px solid rgba(255,255,255,.08);
+
+
+    display:flex;
+
+
+    flex-direction:column;
+
+
+    align-items:center;
+
+
+    justify-content:space-between;
+
+
+    padding:18px 0;
+
+
+    overflow:hidden;
+
+
+}
+
+
+
+
+
+/* ==========================================
+              LOGO
+========================================== */
+
+
+.activity-logo{
+
+
+    position:relative;
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    justify-content:center;
+
+
+}
+
+
+
+
+
+.logo-box{
+
+
+    width:42px;
+
+
+    height:42px;
+
+
+    border-radius:12px;
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    justify-content:center;
+
+
+    font-size:21px;
+
+
+    color:#38bdf8;
+
+
+    background:
+
+    rgba(56,189,248,.12);
+
+
+    border:
+
+    1px solid rgba(56,189,248,.25);
+
+
+    box-shadow:
+
+    0 0 25px rgba(56,189,248,.25);
+
+
+    transition:.3s;
+
+
+}
+
+
+
+.logo-box:hover{
+
+
+    transform:
+
+    scale(1.08);
+
+
+}
+
+
+
+
+
+
+
+.logo-tooltip{
+
+
+    position:absolute;
+
+
+    left:55px;
+
+
+    top:10px;
+
+
+    background:#020617;
+
+
+    color:white;
+
+
+    padding:7px 12px;
+
+
+    border-radius:8px;
+
+
+    font-size:12px;
+
+
+    white-space:nowrap;
+
+
+    opacity:0;
+
+
+    pointer-events:none;
+
+
+    transition:.25s;
+
+
+    border:
+
+    1px solid rgba(255,255,255,.08);
+
+
+}
+
+
+
+.activity-logo:hover .logo-tooltip{
+
+
+    opacity:1;
+
+
+}
+
+
+
+
+
+
+
+.online-dot{
+
+
+    position:absolute;
+
+
+    right:-3px;
+
+
+    bottom:2px;
+
+
+    font-size:10px;
+
+
+    color:#22c55e;
+
+
+    background:#020617;
+
+
+    border-radius:50%;
+
+
+}
+
+
+
+
+
+
+
+/* ==========================================
+        TOP / BOTTOM GROUP
+========================================== */
+
+
+.activity-top,
+.activity-bottom{
+
+
+    display:flex;
+
+
+    flex-direction:column;
+
+
+    align-items:center;
+
+
+    gap:14px;
+
+
+}
+
+
+
+
+
+/* ==========================================
+        ICON ITEM
+========================================== */
+
+
+.activity-item{
+
+
+    position:relative;
+
+
+}
+
+
+
+
+
+
+.activity-btn{
+
+
+    width:44px;
+
+
+    height:44px;
+
+
+    border:none;
+
+
+    border-radius:12px;
+
+
+    background:transparent;
+
+
+    color:#94a3b8;
+
+
+    cursor:pointer;
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    justify-content:center;
+
+
+    transition:.25s;
+
+
+    position:relative;
+
+
+}
+
+
+
+
+.activity-icon{
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    justify-content:center;
+
+
+    font-size:21px;
+
+
+}
+
+
+
+
+
+.activity-btn:hover{
+
+
+    background:
+
+    rgba(255,255,255,.08);
+
+
+    color:white;
+
+
+    transform:
+
+    translateY(-2px);
+
+
+}
+
+
+
+
+
+.activity-btn.active{
+
+
+    color:#60a5fa;
+
+
+    background:
+
+    rgba(59,130,246,.18);
+
+
+}
+
+
+
+
+
+.activity-btn.active::before{
+
+
+    content:"";
+
+
+    position:absolute;
+
+
+    left:-10px;
+
+
+    height:28px;
+
+
+    width:3px;
+
+
+    background:#3b82f6;
+
+
+    border-radius:
+
+    0 5px 5px 0;
+
+
+}
+
+
+
+
+
+
+
+/* ==========================================
+              BADGES
+========================================== */
+
+
+.activity-badge{
+
+
+    position:absolute;
+
+
+    top:-5px;
+
+
+    right:-6px;
+
+
+    min-width:18px;
+
+
+    height:18px;
+
+
+    padding:0 5px;
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    justify-content:center;
+
+
+    background:#ef4444;
+
+
+    color:white;
+
+
+    border-radius:50%;
+
+
+    border:
+
+    2px solid #111827;
+
+
+    font-size:10px;
+
+
+    font-weight:700;
+
+
+}
+
+
+
+
+
+
+
+/* ==========================================
+             CLEAN UI
+========================================== */
+
+
+.activity-bar *{
+
+
+    user-select:none;
+
+
+}

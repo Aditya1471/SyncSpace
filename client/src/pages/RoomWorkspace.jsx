@@ -3,8 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { io } from "socket.io-client";
 import "../css/RoomWorkspace.css";
 import Whiteboard from "../components/Whiteboard/Whiteboard";
-import CodeEditor from "../components/CodeEditor";
-
+import CodeEditor from "../components/CodeIDE/EditorArea";
 
 import { 
   Users, Code2, Palette, LogOut, 

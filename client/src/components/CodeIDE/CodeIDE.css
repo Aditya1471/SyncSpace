@@ -1,0 +1,679 @@
+/* =========================================
+   SYNCSPACE CODE IDE - PREMIUM UI
+========================================= */
+
+
+*{
+
+    box-sizing:border-box;
+
+}
+
+
+
+body{
+
+    margin:0;
+
+    overflow:hidden;
+
+    background:#0b0f17;
+
+    font-family:
+
+    "Inter",
+
+    "Segoe UI",
+
+    sans-serif;
+
+}
+
+
+
+/* =========================================
+        MAIN IDE CONTAINER
+========================================= */
+
+
+.codeide{
+
+
+    height:100vh;
+
+
+    width:100vw;
+
+
+    display:flex;
+
+
+    background:#0b0f17;
+
+
+    overflow:hidden;
+
+
+    color:white;
+
+
+}
+
+
+
+
+
+
+/* =========================================
+        ACTIVITY BAR
+========================================= */
+
+
+.activity-bar{
+
+
+    width:64px;
+
+
+    height:100vh;
+
+
+    background:
+
+    linear-gradient(
+
+    180deg,
+
+    #111827,
+
+    #020617
+
+    );
+
+
+    border-right:
+
+    1px solid rgba(255,255,255,.08);
+
+
+    display:flex;
+
+
+    flex-direction:column;
+
+
+    align-items:center;
+
+
+    justify-content:space-between;
+
+
+    padding:18px 0;
+
+
+}
+
+
+
+
+
+.activity-btn{
+
+
+    width:44px;
+
+
+    height:44px;
+
+
+    border:none;
+
+
+    border-radius:12px;
+
+
+    background:transparent;
+
+
+    color:#94a3b8;
+
+
+    font-size:20px;
+
+
+    cursor:pointer;
+
+
+    transition:.25s;
+
+
+}
+
+
+
+.activity-btn:hover{
+
+
+    background:
+
+    rgba(255,255,255,.08);
+
+
+    color:white;
+
+
+}
+
+
+
+.activity-btn.active{
+
+
+    color:#60a5fa;
+
+
+    background:
+
+    rgba(59,130,246,.18);
+
+
+    box-shadow:
+
+    inset 3px 0 #3b82f6;
+
+
+}
+
+
+
+
+
+
+/* =========================================
+        FILE EXPLORER
+========================================= */
+
+
+.file-explorer{
+
+
+    width:260px;
+
+
+    height:100vh;
+
+
+    background:#0f172a;
+
+
+    border-right:
+
+    1px solid rgba(255,255,255,.08);
+
+
+    overflow:hidden;
+
+
+}
+
+
+
+
+
+.explorer-header{
+
+
+    height:45px;
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    padding:0 15px;
+
+
+    color:#cbd5e1;
+
+
+    font-size:12px;
+
+
+    font-weight:700;
+
+
+}
+
+
+
+.file-item{
+
+
+    height:34px;
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    gap:10px;
+
+
+    padding-left:20px;
+
+
+    color:#cbd5e1;
+
+
+    cursor:pointer;
+
+
+    transition:.2s;
+
+
+}
+
+
+
+.file-item:hover{
+
+
+    background:
+
+    rgba(255,255,255,.06);
+
+
+}
+
+
+
+.file-item.active{
+
+
+    background:
+
+    rgba(59,130,246,.2);
+
+
+    color:white;
+
+
+    border-left:
+
+    3px solid #3b82f6;
+
+
+}
+
+
+
+
+
+/* =========================================
+        MAIN WORKSPACE
+========================================= */
+
+
+.ide-main{
+
+
+    flex:1;
+
+
+    height:100vh;
+
+
+    display:flex;
+
+
+    flex-direction:column;
+
+
+    min-width:0;
+
+
+}
+
+
+
+
+
+
+/* =========================================
+        EDITOR TOOLBAR
+========================================= */
+
+
+.editor-toolbar{
+
+
+    height:48px;
+
+
+    background:#111827;
+
+
+    border-bottom:
+
+    1px solid rgba(255,255,255,.08);
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    justify-content:space-between;
+
+
+    padding:0 15px;
+
+
+}
+
+
+
+
+
+.editor-toolbar button{
+
+
+    border:none;
+
+
+    border-radius:8px;
+
+
+    padding:8px 15px;
+
+
+    color:white;
+
+
+    cursor:pointer;
+
+
+    background:#2563eb;
+
+
+    transition:.25s;
+
+
+}
+
+
+
+.editor-toolbar button:hover{
+
+
+    transform:
+
+    translateY(-1px);
+
+
+    filter:brightness(1.2);
+
+
+}
+
+
+
+
+
+
+/* =========================================
+        EDITOR AREA
+========================================= */
+
+
+.editor-area{
+
+
+    flex:1;
+
+
+    display:flex;
+
+
+    flex-direction:column;
+
+
+    min-height:0;
+
+
+}
+
+
+
+
+
+.monaco-container{
+
+
+    flex:1;
+
+
+    overflow:hidden;
+
+
+}
+
+
+
+
+
+
+
+/* =========================================
+        TERMINAL
+========================================= */
+
+
+.terminal{
+
+
+    height:220px;
+
+
+    background:#020617;
+
+
+    border-top:
+
+    1px solid rgba(255,255,255,.08);
+
+
+    display:flex;
+
+
+    flex-direction:column;
+
+
+}
+
+
+
+
+
+.terminal-header{
+
+
+    height:38px;
+
+
+    background:#111827;
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    padding:0 15px;
+
+
+    color:#94a3b8;
+
+
+}
+
+
+
+
+
+.terminal-output{
+
+
+    flex:1;
+
+
+    overflow:auto;
+
+
+    padding:15px;
+
+
+    color:#22c55e;
+
+
+    font-family:
+
+    "JetBrains Mono";
+
+
+}
+
+
+
+
+
+
+.terminal-input-area{
+
+
+    height:40px;
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    padding:0 15px;
+
+
+    background:#020617;
+
+
+}
+
+
+
+.terminal-input-area input{
+
+
+    flex:1;
+
+
+    background:none;
+
+
+    border:none;
+
+
+    outline:none;
+
+
+    color:white;
+
+
+}
+
+
+
+
+
+
+
+/* =========================================
+        STATUS BAR
+========================================= */
+
+
+.status-bar{
+
+
+    position:fixed;
+
+
+    bottom:0;
+
+
+    left:0;
+
+
+    height:26px;
+
+
+    width:100%;
+
+
+    background:#2563eb;
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    justify-content:space-between;
+
+
+    padding:0 15px;
+
+
+    font-size:12px;
+
+
+    color:white;
+
+
+    z-index:100;
+
+
+}
+
+
+
+
+
+
+/* =========================================
+        SCROLL CONTROL
+========================================= */
+
+
+.codeide,
+
+
+.ide-main,
+
+
+.editor-area,
+
+
+.monaco-container{
+
+
+    overflow:hidden;
+
+
+}
