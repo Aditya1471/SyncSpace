@@ -52,10 +52,9 @@ export default function RoomLanding() {
 
     try {
       setLoading(true);
-      const generatedRoomId =
-        "SYNC-" + Math.random().toString(36).substring(2, 7).toUpperCase();
-
-      const response = await fetch("http://localhost:5000/api/rooms", {
+      const generatedRoomId = "SYNC-" + Math.random().toString(36).substring(2, 7).toUpperCase();
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const response = await fetch(`${API_URL}/api/rooms`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
