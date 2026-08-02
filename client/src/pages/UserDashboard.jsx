@@ -1,6 +1,4 @@
-// src/pages/UserDashboard.jsx
-
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../css/Userdashboard.css";
 
@@ -26,8 +24,108 @@ import {
   FaPaintBrush,
 } from "react-icons/fa";
 
+function ProfileView({ username, displayUsername }) {
+  const [email, setEmail] = useState("aditya.jha.12@syncspace.com");
+  const [role, setRole] = useState("Lead Full Stack Developer");
+  const [bio, setBio] = useState("Building the future of real-time collaborative development workspaces.");
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  return (
+    <div className="profile-view-container" style={{ padding: "2.5rem", background: "rgba(17, 24, 39, 0.65)", borderRadius: "18px", border: "1px solid rgba(255, 255, 255, 0.08)", marginTop: "2rem", backdropFilter: "blur(12px)" }}>
+      <h2 style={{ color: "#f9fafb", marginBottom: "1.5rem", fontSize: "1.8rem", fontWeight: "700" }}>Developer Profile</h2>
+      <div style={{ display: "flex", gap: "3rem", flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 250px", textAlign: "center", padding: "2.5rem", background: "rgba(15, 23, 42, 0.8)", borderRadius: "14px", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
+          <div style={{ width: "110px", height: "110px", borderRadius: "50%", background: "linear-gradient(135deg, #6366f1, #06b6d4)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: "3.2rem", fontWeight: "bold", margin: "0 auto 1.2rem", boxShadow: "0 0 20px rgba(99, 102, 241, 0.4)" }}>
+            {displayUsername.charAt(0).toUpperCase()}
+          </div>
+          <h3 style={{ color: "#f9fafb", fontSize: "1.4rem", marginBottom: "0.4rem" }}>{displayUsername}</h3>
+          <p style={{ color: "#9ca3af", fontSize: "0.95rem" }}>{role}</p>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(16, 185, 129, 0.15)", color: "#10b981", padding: "6px 12px", borderRadius: "20px", fontSize: "0.8rem", marginTop: "1.2rem" }}>
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981" }}></span> Active Member
+          </div>
+        </div>
+        <form onSubmit={handleSave} style={{ flex: "2 2 400px", display: "flex", flexDirection: "column", gap: "1.2rem" }}>
+          <div>
+            <label style={{ display: "block", color: "#9ca3af", marginBottom: "0.5rem", fontSize: "0.9rem", fontWeight: "500" }}>Username</label>
+            <input type="text" value={username} disabled style={{ width: "100%", padding: "0.8rem 1rem", background: "rgba(3, 7, 18, 0.4)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", color: "#6b7280", cursor: "not-allowed" }} />
+          </div>
+          <div>
+            <label style={{ display: "block", color: "#9ca3af", marginBottom: "0.5rem", fontSize: "0.9rem", fontWeight: "500" }}>Display Name</label>
+            <input type="text" value={displayUsername} disabled style={{ width: "100%", padding: "0.8rem 1rem", background: "rgba(3, 7, 18, 0.4)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", color: "#6b7280", cursor: "not-allowed" }} />
+          </div>
+          <div>
+            <label style={{ display: "block", color: "#9ca3af", marginBottom: "0.5rem", fontSize: "0.9rem", fontWeight: "500" }}>Email Address</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={{ width: "100%", padding: "0.8rem 1rem", background: "rgba(3, 7, 18, 0.6)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", color: "#f9fafb" }} />
+          </div>
+          <div>
+            <label style={{ display: "block", color: "#9ca3af", marginBottom: "0.5rem", fontSize: "0.9rem", fontWeight: "500" }}>Bio</label>
+            <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows="3" style={{ width: "100%", padding: "0.8rem 1rem", background: "rgba(3, 7, 18, 0.6)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", color: "#f9fafb", resize: "none" }} />
+          </div>
+          <button type="submit" style={{ alignSelf: "flex-start", padding: "0.8rem 2rem", background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", transition: "all 0.2s ease", boxShadow: "0 4px 14px rgba(99, 102, 241, 0.3)" }}>
+            Save Profile Changes
+          </button>
+          {saved && <span style={{ color: "#10b981", fontSize: "0.95rem", fontWeight: "500" }}>✓ Profile saved successfully!</span>}
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function SettingsView() {
+  const [theme, setTheme] = useState("VS-Dark (Default)");
+  const [syncDelay, setSyncDelay] = useState("Real-time (0ms)");
+  const [notifications, setNotifications] = useState(true);
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  return (
+    <div className="settings-view-container" style={{ padding: "2.5rem", background: "rgba(17, 24, 39, 0.65)", borderRadius: "18px", border: "1px solid rgba(255, 255, 255, 0.08)", marginTop: "2rem", backdropFilter: "blur(12px)" }}>
+      <h2 style={{ color: "#f9fafb", marginBottom: "1.5rem", fontSize: "1.8rem", fontWeight: "700" }}>Workspace Settings</h2>
+      <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "1.5rem", maxWidth: "600px" }}>
+        <div>
+          <label style={{ display: "block", color: "#9ca3af", marginBottom: "0.5rem", fontSize: "0.9rem", fontWeight: "500" }}>Editor Theme Preference</label>
+          <select value={theme} onChange={(e) => setTheme(e.target.value)} style={{ width: "100%", padding: "0.8rem 1rem", background: "rgba(3, 7, 18, 0.6)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", color: "#f9fafb", cursor: "pointer" }}>
+            <option>VS-Dark (Default)</option>
+            <option>Monokai Pro</option>
+            <option>Github Dark</option>
+            <option>Dracula</option>
+          </select>
+        </div>
+        <div>
+          <label style={{ display: "block", color: "#9ca3af", marginBottom: "0.5rem", fontSize: "0.9rem", fontWeight: "500" }}>Socket Sync Mode</label>
+          <select value={syncDelay} onChange={(e) => setSyncDelay(e.target.value)} style={{ width: "100%", padding: "0.8rem 1rem", background: "rgba(3, 7, 18, 0.6)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", color: "#f9fafb", cursor: "pointer" }}>
+            <option>Real-time (0ms)</option>
+            <option>Debounced (200ms)</option>
+            <option>On-demand</option>
+          </select>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "0.5rem" }}>
+          <input type="checkbox" id="notify" checked={notifications} onChange={(e) => setNotifications(e.target.checked)} style={{ width: "18px", height: "18px", accentColor: "#6366f1", cursor: "pointer" }} />
+          <label htmlFor="notify" style={{ color: "#f9fafb", cursor: "pointer", userSelect: "none", fontSize: "0.95rem" }}>Enable sound alerts for new peer messages</label>
+        </div>
+        <button type="submit" style={{ alignSelf: "flex-start", padding: "0.8rem 2rem", background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", transition: "all 0.2s ease", boxShadow: "0 4px 14px rgba(99, 102, 241, 0.3)" }}>
+          Apply System Settings
+        </button>
+        {saved && <span style={{ color: "#10b981", fontSize: "0.95rem", fontWeight: "500" }}>✓ Workspace settings updated!</span>}
+      </form>
+    </div>
+  );
+}
+
 export default function UserDashboard() {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   // ===========================
   // User Data
@@ -35,6 +133,11 @@ export default function UserDashboard() {
 
   const username =
     localStorage.getItem("syncspace_user") || "Aditya";
+
+  const displayUsername = username === "aditya.jha.12" ? "Aditya" : (
+    username.split('.')[0].split('_')[0].charAt(0).toUpperCase() + 
+    username.split('.')[0].split('_')[0].slice(1)
+  );
 
   const stats = [
     {
@@ -134,7 +237,7 @@ export default function UserDashboard() {
     <ul className="menu">
 
       {/* Dashboard */}
-      <li className="active">
+      <li className={activeTab === "dashboard" ? "active" : ""} onClick={() => setActiveTab("dashboard")} style={{ cursor: "pointer" }}>
         <FaHome />
         <span>Dashboard</span>
       </li>
@@ -149,28 +252,28 @@ export default function UserDashboard() {
 
       {/* Code Editor */}
       <li>
-  <Link to="/code-editor" className="sidebar-link">
-    <FaCode />
-    <span>Code Editor</span>
-  </Link>
-</li>
+        <Link to="/code-editor" className="sidebar-link">
+          <FaCode />
+          <span>Code Editor</span>
+        </Link>
+      </li>
 
       {/* Whiteboard */}
       <li>
-  <Link to="/whiteboard" className="sidebar-link">
-    <FaPaintBrush />
-    <span>Whiteboard</span>
-  </Link>
-</li>
+        <Link to="/whiteboard" className="sidebar-link">
+          <FaPaintBrush />
+          <span>Whiteboard</span>
+        </Link>
+      </li>
 
-      {/* Profile (No Navigation) */}
-      <li>
+      {/* Profile */}
+      <li className={activeTab === "profile" ? "active" : ""} onClick={() => setActiveTab("profile")} style={{ cursor: "pointer" }}>
         <FaUserCircle />
         <span>Profile</span>
       </li>
 
-      {/* Settings (No Navigation) */}
-      <li>
+      {/* Settings */}
+      <li className={activeTab === "settings" ? "active" : ""} onClick={() => setActiveTab("settings")} style={{ cursor: "pointer" }}>
         <FaCog />
         <span>Settings</span>
       </li>
@@ -222,13 +325,13 @@ export default function UserDashboard() {
 
               <div className="profile-avatar">
 
-                {username.charAt(0).toUpperCase()}
+                {displayUsername.charAt(0).toUpperCase()}
 
               </div>
 
               <div>
 
-                <h4>{}</h4>
+                <h4>{displayUsername}</h4>
 
                 <span>Full Stack Developer</span>
 
@@ -240,11 +343,13 @@ export default function UserDashboard() {
 
         </header>
 
-        {/* ================================= */}
-        {/* Hero Section */}
-        {/* ================================= */}
+        {activeTab === "dashboard" && (
+          <>
+            {/* ================================= */}
+            {/* Hero Section */}
+            {/* ================================= */}
 
-        <section className="hero">
+            <section className="hero">
 
           <div className="hero-left">
 
@@ -262,7 +367,7 @@ export default function UserDashboard() {
 
               <br />
 
-              {} 👋
+              {displayUsername} 👋
 
             </h1>
 
@@ -311,11 +416,11 @@ export default function UserDashboard() {
 
               <div className="big-avatar">
 
-                {username.charAt(0).toUpperCase()}
+                {displayUsername.charAt(0).toUpperCase()}
 
               </div>
 
-              <h3>{username}</h3>
+              <h3>{displayUsername}</h3>
 
               <p>Full Stack Developer</p>
 
@@ -655,11 +760,16 @@ export default function UserDashboard() {
 
 
         </section>
+          </>
+        )}
 
+        {activeTab === "profile" && (
+          <ProfileView username={username} displayUsername={displayUsername} />
+        )}
 
-
-
-
+        {activeTab === "settings" && (
+          <SettingsView />
+        )}
       </main>
 
 
