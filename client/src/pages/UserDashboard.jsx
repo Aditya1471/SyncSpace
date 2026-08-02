@@ -34,7 +34,7 @@ export default function UserDashboard() {
   // ===========================
 
   const username =
-    localStorage.getItem("syncspace_user") || "Mahesh";
+    localStorage.getItem("syncspace_user") || "Aditya";
 
   const stats = [
     {

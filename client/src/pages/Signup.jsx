@@ -326,6 +326,14 @@ JSON.stringify(user)
 
 );
 
+localStorage.setItem(
+
+"syncspace_user",
+
+user.username
+
+);
+
 
 }
 

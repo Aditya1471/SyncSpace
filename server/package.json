@@ -14,7 +14,7 @@
     "mongodb",
     "syncspace"
   ],
-  "author": "Mahesh",
+  "author": "Aditya",
   "license": "ISC",
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

@@ -199,6 +199,11 @@ function Login() {
           JSON.stringify(user)
         );
 
+        localStorage.setItem(
+          "syncspace_user",
+          user.username
+        );
+
 
       }
       else{
@@ -213,6 +218,11 @@ function Login() {
         sessionStorage.setItem(
           "user",
           JSON.stringify(user)
+        );
+
+        localStorage.setItem(
+          "syncspace_user",
+          user.username
         );
 
 
