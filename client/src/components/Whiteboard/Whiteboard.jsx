@@ -236,23 +236,38 @@ function Whiteboard({ socket, roomId }) {
 
   // Responsive stage dimensions state
   const [dimensions, setDimensions] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
+    width: 800,
+    height: 600,
   });
 
-  // Handle window resizing to keep the whiteboard stage fully responsive
+  // Handle container resizing to keep the whiteboard stage fully responsive
   useEffect(() => {
-    const handleResize = () => {
-      setDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const width = entry.target.clientWidth;
+        const height = entry.target.clientHeight;
+        if (width > 0 && height > 0) {
+          setDimensions({ width, height });
+        }
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    const width = containerRef.current.clientWidth;
+    const height = containerRef.current.clientHeight;
+    if (width > 0 && height > 0) {
+      setDimensions({ width, height });
+    }
+
+    return () => {
+      resizeObserver.disconnect();
     };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Listen to browser fullscreen changes to sync toggle state and stage dimensions
+  // Listen to browser fullscreen changes to sync toggle state
   useEffect(() => {
     const handleFullscreenChange = () => {
       const isCurrentlyFullscreen = !!(
@@ -262,14 +277,6 @@ function Whiteboard({ socket, roomId }) {
         document.msFullscreenElement
       );
       setIsFullscreen(isCurrentlyFullscreen);
-
-      // Force recalculation of stage dimensions once layout settles
-      setTimeout(() => {
-        setDimensions({
-          width: window.innerWidth,
-          height: window.innerHeight,
-        });
-      }, 50);
     };
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
@@ -905,6 +912,9 @@ function Whiteboard({ socket, roomId }) {
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
+          onTouchStart={handleMouseDown}
+          onTouchMove={handleMouseMove}
+          onTouchEnd={handleMouseUp}
           style={{
             background: "transparent",
             cursor: selectedTool === "select" ? "default" : "crosshair",

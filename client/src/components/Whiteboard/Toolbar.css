@@ -87,18 +87,20 @@
 }
 
 /* Hover State */
-.toolbar-btn:hover:not(:disabled) {
-  background-color: rgba(0, 0, 0, 0.04);
-  color: #111827;
-}
+@media (hover: hover) {
+  .toolbar-btn:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.04);
+    color: #111827;
+  }
 
-.theme-dark .toolbar-btn:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.06);
-  color: #f9fafb;
-}
+  .theme-dark .toolbar-btn:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: #f9fafb;
+  }
 
-.toolbar-btn:hover:not(:disabled) svg {
-  transform: scale(1.1);
+  .toolbar-btn:hover:not(:disabled) svg {
+    transform: scale(1.1);
+  }
 }
 
 /* Active State */
@@ -545,6 +547,18 @@
   .stroke-selector-dropdown {
     right: 50%;
     transform: translateX(50%);
+  }
+}
+
+@media (max-width: 768px) {
+  .whiteboard-toolbar {
+    max-width: 95vw !important;
+    gap: 4px 8px !important;
+    padding: 6px 8px !important;
+    top: 8px !important;
+  }
+  .toolbar-separator {
+    display: none !important;
   }
 }
 

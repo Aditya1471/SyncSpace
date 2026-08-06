@@ -40,7 +40,7 @@ export default function RoomWorkspace() {
   const [chatInput, setChatInput] = useState("");
 
   // File Vault State
-  const [sharedFiles] = useState([
+  const [sharedFiles, setSharedFiles] = useState([
     { id: 1, name: "architecture-v2.png", size: "2.4 MB", sender: "Alex Dev", time: "10:05 AM", type: "image" },
     { id: 2, name: "database-schema.sql", size: "14 KB", sender: "Jordan Dev", time: "10:12 AM", type: "code" },
   ]);
@@ -48,6 +48,7 @@ export default function RoomWorkspace() {
   // Refs
   const socketRef = useRef(null);
   const chatEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Toast Helper
   const showToast = useCallback((msg) => {
@@ -159,6 +160,32 @@ export default function RoomWorkspace() {
     }
 
     setChatInput("");
+  };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const newSharedFiles = files.map((file, index) => {
+      let sizeStr = `${(file.size / 1024).toFixed(1)} KB`;
+      if (file.size > 1024 * 1024) {
+        sizeStr = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+      }
+
+      const isCode = file.name.endsWith(".js") || file.name.endsWith(".jsx") || file.name.endsWith(".ts") || file.name.endsWith(".tsx") || file.name.endsWith(".py") || file.name.endsWith(".java") || file.name.endsWith(".html") || file.name.endsWith(".css") || file.name.endsWith(".sql") || file.name.endsWith(".json");
+
+      return {
+        id: `file-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
+        name: file.name,
+        size: sizeStr,
+        sender: username || "You",
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        type: isCode ? "code" : "text",
+      };
+    });
+
+    setSharedFiles((prev) => [...newSharedFiles, ...prev]);
+    showToast(`Successfully selected ${files.length} file(s)`);
   };
 
 
@@ -406,10 +433,17 @@ export default function RoomWorkspace() {
                 <p>Upload and distribute assets across room participants.</p>
               </div>
 
-              <div className="dropzone">
+              <div className="dropzone" onClick={() => fileInputRef.current?.click()}>
                 <Paperclip size={24} className="text-cyan mb-2" />
                 <p>Click to browse or drop project assets here</p>
                 <span>Supports source code, design mockups & documentation up to 50MB</span>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: "none" }}
+                  onChange={handleFileSelect}
+                  multiple
+                />
               </div>
 
               <div className="file-list-section">
