@@ -95,8 +95,6 @@ const roomSchema = new mongoose.Schema(
 
       unique: true,
 
-      index: true,
-
     },
 
 
@@ -460,13 +458,6 @@ function(userId){
 // ==================================
 // INDEXES
 // ==================================
-
-
-roomSchema.index({
-
-  roomId:1
-
-});
 
 
 roomSchema.index({

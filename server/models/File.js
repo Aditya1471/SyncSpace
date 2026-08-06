@@ -455,13 +455,6 @@ async function(userId){
 
 fileSchema.index({
 
-  room:1,
-
-});
-
-
-fileSchema.index({
-
   folder:1,
 
 });

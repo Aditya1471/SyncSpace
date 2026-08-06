@@ -272,16 +272,6 @@ async function(){
 
 
 userSchema.index({
-  email: 1,
-});
-
-
-userSchema.index({
-  username: 1,
-});
-
-
-userSchema.index({
   isOnline: 1,
 });
 

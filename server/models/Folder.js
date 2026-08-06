@@ -243,13 +243,6 @@ async function(){
 
 folderSchema.index({
 
-  room:1,
-
-});
-
-
-folderSchema.index({
-
   parentFolder:1,
 
 });
