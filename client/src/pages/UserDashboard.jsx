@@ -139,6 +139,14 @@ export default function UserDashboard() {
     username.split('.')[0].split('_')[0].slice(1)
   );
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+
+    if (hour < 12) return "Good Morning";
+    if (hour < 18) return "Good Afternoon";
+    return "Good Evening";
+  };
+
   const stats = [
     {
       id: 1,
@@ -363,7 +371,7 @@ export default function UserDashboard() {
 
             <h1>
 
-              Good Evening,
+              {getGreeting()},
 
               <br />
 
