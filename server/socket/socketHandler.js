@@ -218,6 +218,23 @@ const socketHandler = (io) => {
 
             /*
             ========================================
+            CHAT EVENTS
+            ========================================
+            */
+
+            socket.on(
+                "chat-message",
+                (data)=>{
+                    io.to(data.roomId).emit("chat-message", {
+                        username: data.username,
+                        message: data.message,
+                        time: new Date().toISOString()
+                    });
+                }
+            );
+
+            /*
+            ========================================
             TERMINAL EVENTS READY
             ========================================
             */
