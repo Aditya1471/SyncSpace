@@ -1,30 +1,28 @@
 import React, { useState } from "react";
-
-import MonacoEditor from "@monaco-editor/react";
-
+import MonacoEditor, { loader } from "@monaco-editor/react";
 import EditorToolbar from "./EditorToolbar";
+import { executeCode } from "../../services/runService";
+import { saveFile } from "../../services/editorService";
+import "./CodeIDE.css";
 
-import {
-  executeCode
-} from "../../services/runService";
+loader.config({
+  paths: {
+    vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs"
+  }
+});
 
-import {
-  saveFile
-} from "../../services/editorService";
+export default function EditorArea({ value, onChange }) {
+  const [language, setLanguage] = useState("javascript");
+  const [localCode, setLocalCode] = useState(`console.log("SyncSpace IDE");`);
 
-
-
-export default function EditorArea() {
-
-
-  const [language, setLanguage] =
-    useState("javascript");
-
-
-  const [code, setCode] =
-    useState(
-      `console.log("SyncSpace IDE");`
-    );
+  const code = value !== undefined ? value : localCode;
+  const setCode = (val) => {
+    if (onChange) {
+      onChange(val);
+    } else {
+      setLocalCode(val);
+    }
+  };
 
 
   const [output, setOutput] =

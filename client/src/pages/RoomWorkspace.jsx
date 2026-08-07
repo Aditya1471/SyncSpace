@@ -347,30 +347,12 @@ export default function RoomWorkspace() {
           
           {/* TAB 1: VS Code Dark Theme Editor */}
           {activeTab === "editor" && (
-            <div className="vscode-editor">
-              <div className="editor-tab-bar">
-                <div className="active-tab-file">
-                  <FileCode size={14} className="text-cyan" />
-                  <span>index.js</span>
-                </div>
-                <span className="lang-tag">JavaScript ES6</span>
-              </div>
-
-              <div className="editor-body" style={{ height: "calc(100% - 70px)", padding: 0 }}>
-                <CodeEditor
-                  language="javascript"
-                  value={code}
-                  onChange={handleMonacoCodeChange}
-                />
-              </div>
-
-              <div className="editor-statusbar">
-                <div className="status-left">
-                  <span>Ln {lineCount}, Col 1</span>
-                  <span>UTF-8</span>
-                </div>
-                <span>SyncSpace Engine v2.4</span>
-              </div>
+            <div className="vscode-editor" style={{ padding: 0 }}>
+              <CodeEditor
+                language="javascript"
+                value={code}
+                onChange={handleMonacoCodeChange}
+              />
             </div>
           )}
 
