@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../css/Userdashboard.css";
 
@@ -129,6 +129,19 @@ function SettingsView() {
 export default function UserDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [toastMsg, setToastMsg] = useState("");
+  useEffect(() => {
+    const msg = localStorage.getItem("loginSuccess");
+
+    if (msg) {
+      setToastMsg(msg);
+      localStorage.removeItem("loginSuccess");
+
+      setTimeout(() => {
+        setToastMsg("");
+      }, 3000);
+    }
+  }, []);
 
   // ===========================
   // User Data
@@ -145,9 +158,19 @@ export default function UserDashboard() {
   const getGreeting = () => {
     const hour = new Date().getHours();
 
-    if (hour < 12) return "Good Morning";
-    if (hour < 18) return "Good Afternoon";
-    return "Good Evening";
+    if (hour >= 5 && hour < 12) {
+      return "Good Morning";
+    }
+
+    if (hour >= 12 && hour < 17) {
+      return "Good Afternoon";
+    }
+
+    if (hour >= 17 && hour < 21) {
+      return "Good Evening";
+    }
+
+    return "Welcome Back";
   };
 
   const stats = [
@@ -231,6 +254,11 @@ export default function UserDashboard() {
 
   return (
     <div className="dashboard">
+      {toastMsg && (
+        <div className="toast">
+          {toastMsg}
+        </div>
+      )}
 
       {/* ================================= */}
       {/* Sidebar */}

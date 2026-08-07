@@ -249,6 +249,10 @@ function Login() {
       );
 
 
+      localStorage.setItem(
+        "loginSuccess",
+        "Logged in successfully"
+      );
 
       navigate(
         "/dashboard"
