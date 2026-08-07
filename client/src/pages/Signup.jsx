@@ -38,7 +38,7 @@ const [showPassword,setShowPassword] = useState(false);
 
 const [showConfirm,setShowConfirm] = useState(false);
 
-
+const [toastMsg,setToastMsg] = useState("");
 
 
 
@@ -60,7 +60,13 @@ agree:false
 
 
 
+const showToast = (msg) => {
+  setToastMsg(msg);
 
+  setTimeout(() => {
+    setToastMsg("");
+  }, 3000);
+};
 
 
 const handleChange=(e)=>{
@@ -342,13 +348,10 @@ user.username
 
 
 
-alert(
-
+showToast(
 response.data.message ||
 "Account created successfully"
-
 );
-
 
 
 
@@ -997,6 +1000,12 @@ Login
 
 
 </div>
+
+{toastMsg && (
+  <div className="toast">
+    {toastMsg}
+  </div>
+)}
 
 
 </div>
