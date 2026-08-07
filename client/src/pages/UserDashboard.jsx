@@ -25,7 +25,10 @@ import {
 } from "react-icons/fa";
 
 function ProfileView({ username, displayUsername }) {
-  const [email, setEmail] = useState("aditya.jha.12@syncspace.com");
+  const user = JSON.parse(localStorage.getItem("user"));
+  const [email, setEmail] = useState(
+    user?.email || ""
+  );
   const [role, setRole] = useState("Lead Full Stack Developer");
   const [bio, setBio] = useState("Building the future of real-time collaborative development workspaces.");
   const [saved, setSaved] = useState(false);
