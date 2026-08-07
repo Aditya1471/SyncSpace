@@ -83,7 +83,13 @@ export default function RoomWorkspace() {
       setParticipants(updatedList);
     });
 
-    socket.on("code-update", (updatedCode) => setCode(updatedCode));
+    socket.on("code-update", (data) => {
+      if (data && typeof data === "object" && data.code !== undefined) {
+        setCode(data.code);
+      } else if (typeof data === "string") {
+        setCode(data);
+      }
+    });
 
     socket.on("chat-message", (newMsg) => {
       setMessages((prev) => [
