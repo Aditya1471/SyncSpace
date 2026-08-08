@@ -81,15 +81,31 @@ function ProfileView({ username, displayUsername }) {
 }
 
 function SettingsView() {
-  const [theme, setTheme] = useState("VS-Dark (Default)");
-  const [syncDelay, setSyncDelay] = useState("Real-time (0ms)");
-  const [notifications, setNotifications] = useState(true);
+  const [theme, setTheme] = useState(
+    localStorage.getItem("theme") || "VS-Dark (Default)"
+  );
+
+  const [syncDelay, setSyncDelay] = useState(
+    localStorage.getItem("syncDelay") || "Real-time (0ms)"
+  );
+
+  const [notifications, setNotifications] = useState(
+    localStorage.getItem("notifications") !== "false"
+  );
   const [saved, setSaved] = useState(false);
 
   const handleSave = (e) => {
     e.preventDefault();
+
+    localStorage.setItem("theme", theme);
+    localStorage.setItem("syncDelay", syncDelay);
+    localStorage.setItem("notifications", notifications);
+
     setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+
+    setTimeout(() => {
+      setSaved(false);
+    }, 3000);
   };
 
   return (
@@ -120,7 +136,21 @@ function SettingsView() {
         <button type="submit" style={{ alignSelf: "flex-start", padding: "0.8rem 2rem", background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", transition: "all 0.2s ease", boxShadow: "0 4px 14px rgba(99, 102, 241, 0.3)" }}>
           Apply System Settings
         </button>
-        {saved && <span style={{ color: "#10b981", fontSize: "0.95rem", fontWeight: "500" }}>✓ Workspace settings updated!</span>}
+        {saved && (
+          <div
+            style={{
+              marginTop: "1rem",
+              padding: "10px 16px",
+              background: "rgba(16, 185, 129, 0.15)",
+              color: "#10b981",
+              borderRadius: "8px",
+              fontWeight: "600",
+              width: "fit-content"
+            }}
+          >
+            ✓ Workspace settings updated!
+          </div>
+        )}
       </form>
     </div>
   );
