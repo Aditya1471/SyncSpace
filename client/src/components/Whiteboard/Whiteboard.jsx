@@ -175,9 +175,25 @@ function Whiteboard({ socket, roomId }) {
       setTexts([]);
     });
 
+    socket.on(
+      "whiteboard-user-drawing",
+      (data) => {
+        setRemoteCursor(data);
+      }
+    );
+
+    socket.on(
+      "whiteboard-cursor-update",
+      (data) => {
+        setRemoteCursor(data);
+      }
+    );
+
     return () => {
       socket.off("canvas-draw");
       socket.off("canvas-clear");
+      socket.off("whiteboard-user-drawing");
+      socket.off("whiteboard-cursor-update");
     };
   }, [socket]);
 
@@ -212,6 +228,8 @@ function Whiteboard({ socket, roomId }) {
 
   // Theme state: defaults to dark
   const [theme, setTheme] = useState("dark");
+  const [drawingUser, setDrawingUser] = useState("");
+  const [remoteCursor, setRemoteCursor] = useState(null);
 
   // Active Tool and Style states
   const [selectedTool, setSelectedTool] = useState("pencil");
@@ -346,6 +364,13 @@ function Whiteboard({ socket, roomId }) {
   const handleMouseDown = (e) => {
     const stage = e.target.getStage();
     const relativePos = getRelativePointerPosition(stage);
+    if (socket && roomId) {
+      socket.emit("whiteboard-cursor", {
+        roomId,
+        x: relativePos.x,
+        y: relativePos.y
+      });
+    }
 
     // Click off to deselect/blur currently editing text
     if (editingTextId) {
@@ -430,7 +455,11 @@ function Whiteboard({ socket, roomId }) {
     }
 
     isDrawing.current = true;
-
+    if (socket && roomId) {
+      socket.emit("whiteboard-user-drawing", {
+        roomId
+      });
+    }
     // Save previous state to undo stack before drawing
     setUndoStack((prev) => [...prev, { lines, texts }]);
     setRedoStack([]); // Clear redo
@@ -1045,6 +1074,39 @@ function Whiteboard({ socket, roomId }) {
 
   return (
     <div ref={whiteboardRef} className={`whiteboard-container theme-${theme}`}>
+      {drawingUser && (
+        <div
+          style={{
+            position: "absolute",
+            top: "20px",
+            right: "20px",
+            background: "#111827",
+            color: "#ffffff",
+            padding: "8px 14px",
+            borderRadius: "8px",
+            zIndex: 1000,
+            fontSize: "14px",
+          }}
+        >
+          ✏️ {drawingUser}
+        </div>
+      )}
+      {remoteCursor && (
+        <div
+          style={{
+            position: "absolute",
+            left: remoteCursor.x,
+            top: remoteCursor.y,
+            zIndex: 2000,
+            pointerEvents: "none",
+            color: "#38bdf8",
+            fontWeight: "bold",
+            fontSize: "14px",
+          }}
+        >
+          ✏️ {remoteCursor.username}
+        </div>
+      )}
       <Toolbar
         selectedTool={selectedTool}
         setSelectedTool={setSelectedTool}

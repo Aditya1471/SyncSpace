@@ -78,7 +78,7 @@ export default function RoomWorkspace() {
     socketRef.current = socket;
 
     socket.emit("join-room", { roomId, username: storedUser });
-
+    
     socket.on("room-users", (users) => {
       setParticipants(users);
     });
@@ -120,7 +120,7 @@ export default function RoomWorkspace() {
     return () => {
       socket.emit("leave-room", { roomId });
       socket.off("room-users");
-      socket.off("active-users");
+    socket.off("active-users");
       socket.off("code-update");
       socket.off("chat-message");
       socket.off("code-activity");

@@ -197,19 +197,34 @@ const whiteboardSocket = (io)=>{
 
             );
 
+            /*
+            ========================================
+            USER DRAWING STATUS
+            ========================================
+            */
 
+            socket.on(
+                "whiteboard-user-drawing",
+                (data) => {
 
+                    socket.to(data.roomId)
+                    .emit(
+                        "whiteboard-user-drawing",
+                        {
+                            username:
+                            socket.whiteboardData?.username
+                        }
+                    );
 
-
-
-
-
+                }
+            );
 
             /*
             ========================================
             DRAW ELEMENT
             ========================================
             */
+
 
 
             socket.on(
@@ -219,7 +234,7 @@ const whiteboardSocket = (io)=>{
                 async(data)=>{
 
 
-                    try{
+                    try{ 
 
 
                         const {
@@ -479,12 +494,27 @@ const whiteboardSocket = (io)=>{
 
             );
 
+            /*
+            ========================================
+            USER DRAWING STATUS
+            ========================================
+            */
 
+            socket.on(
+                "whiteboard-user-drawing",
+                (data)=>{
 
+                    socket.to(data.roomId)
+                    .emit(
+                        "whiteboard-user-drawing",
+                        {
+                            username:
+                            socket.whiteboardData?.username || "Someone"
+                        }
+                    );
 
-
-
-
+                }
+            );
 
 
             /*
