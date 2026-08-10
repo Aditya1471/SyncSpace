@@ -1,54 +1,57 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import "../css/RoomWorkspace.css";
+
+// Components & Page Imports
 import Whiteboard from "../components/Whiteboard/Whiteboard";
-import CodeEditor from "../components/CodeIDE/EditorArea";
+import CodeEditorPage from "../pages/CodeEditorPage";
 
 import { 
   Users, Code2, Palette, LogOut, 
-  Sparkles, Activity, Wifi, Trash2, Copy, Check, Link2, Monitor, ShieldCheck,
-  MessageSquare, FolderUp, FileCode, Send, Download, Paperclip, FileText, Zap
+  Sparkles, Activity, Wifi, Copy, Check, Link2, Monitor, ShieldCheck,
+  MessageSquare, FolderUp, FileCode, Send, Download, Paperclip, FileText, Zap,
+  Crown, Clock, Hash
 } from "lucide-react";
 
 const SOCKET_URL = import.meta.env?.VITE_SOCKET_URL || "http://localhost:5000";
 
 export default function RoomWorkspace() {
   const { roomId } = useParams();
+  const navigate = useNavigate();
 
-  // User & Room State
+  // Active User & Room Metadata State
   const [username, setUsername] = useState("");
+  const [roomDetails, setRoomDetails] = useState({
+    roomName: `Room #${roomId}`,
+    createdBy: "Loading...",
+    createdAt: null,
+  });
   const [participants, setParticipants] = useState([]);
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Active Tab State: 'editor' | 'whiteboard' | 'chat' | 'files'
   const [activeTab, setActiveTab] = useState("editor"); 
   const [activityFeed, setActivityFeed] = useState([]);
-  
-  // VS Code Editor State
-  const [code, setCode] = useState(
-    "// Welcome to SyncSpace Pro Real-Time Workspace\n// Collaborative socket sync enabled...\n\nfunction initializeEngine() {\n  console.log('SyncEngine initialized dynamically');\n}\n\ninitializeEngine();"
-  );
+
+  // Peer & Activity Tracking State
   const [isPeerTyping, setIsPeerTyping] = useState("");
+  const [lastDrawUser, setLastDrawUser] = useState("");
   const [toastMsg, setToastMsg] = useState("");
 
   // Chat Interface State
-  const [messages, setMessages] = useState([
-    { id: 1, sender: "System", text: "Encrypted connection established in #" + roomId, time: "10:00 AM", isSystem: true },
-    { id: 2, sender: "Alex Dev", text: "Hey! Ready to work on the design architecture.", time: "10:01 AM", isSystem: false },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
 
   // File Vault State
-  const [sharedFiles, setSharedFiles] = useState([
-    { id: 1, name: "architecture-v2.png", size: "2.4 MB", sender: "Alex Dev", time: "10:05 AM", type: "image" },
-    { id: 2, name: "database-schema.sql", size: "14 KB", sender: "Jordan Dev", time: "10:12 AM", type: "code" },
-  ]);
+  const [sharedFiles, setSharedFiles] = useState([]);
 
   // Refs
   const socketRef = useRef(null);
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const drawTimerRef = useRef(null);
+  const lastLogTimeRef = useRef(0);
 
   // Toast Helper
   const showToast = useCallback((msg) => {
@@ -57,8 +60,16 @@ export default function RoomWorkspace() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Activity Log Helper
+  // Activity Log Helper with 2-second rate-limiting for continuous draw strokes
   const addActivityLog = useCallback((text, type) => {
+    const now = Date.now();
+    if (type === "whiteboard" && now - lastLogTimeRef.current < 2000) {
+      return; // Throttle repetitive draw logs
+    }
+    if (type === "whiteboard") {
+      lastLogTimeRef.current = now;
+    }
+
     const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     setActivityFeed((prev) => [
       { id: `${Date.now()}-${Math.random()}`, text, type, time: timestamp },
@@ -66,32 +77,107 @@ export default function RoomWorkspace() {
     ]);
   }, []);
 
-  // Socket Real-Time Setup
+  // ----------------------------------------------------
+  // BROWSER BACK BUTTON & UNLOAD PROTECTION (NATIVE POPUP)
+  // ----------------------------------------------------
   useEffect(() => {
-    const storedUser = localStorage.getItem("syncspace_user") || `User_${Math.floor(1000 + Math.random() * 9000)}`;
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "Are you sure you want to leave the workspace?";
+      return e.returnValue;
+    };
+
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => {
+      const confirmLeave = window.confirm(
+        "Are you sure you want to go back? You will be disconnected from the active workspace."
+      );
+      if (confirmLeave) {
+        if (socketRef.current) {
+          socketRef.current.emit("leave-room", { roomId, username });
+          socketRef.current.disconnect();
+        }
+        navigate("/roomlanding");
+      } else {
+        window.history.pushState(null, "", window.location.href);
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [roomId, username, navigate]);
+
+  // ----------------------------------------------------
+  // REAL-TIME SOCKET CONNECTION & ROSTER SYNC
+  // ----------------------------------------------------
+  useEffect(() => {
+    let storedUser = localStorage.getItem("syncspace_user");
+    if (!storedUser) {
+      storedUser = `User_${Math.floor(1000 + Math.random() * 9000)}`;
+      localStorage.setItem("syncspace_user", storedUser);
+    }
     setUsername(storedUser);
 
     const socket = io(SOCKET_URL, {
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       reconnectionAttempts: 5,
     });
     socketRef.current = socket;
 
-    socket.emit("join-room", { roomId, username: storedUser });
-    
-    socket.on("room-users", (users) => {
-      setParticipants(users);
+    const handleConnect = () => {
+      socket.emit("join-room", { 
+        roomId, 
+        username: storedUser,
+        roomName: `Workspace #${roomId}` 
+      });
+      socket.emit("get-participants", { roomId });
+    };
+
+    socket.on("connect", handleConnect);
+
+    socket.on("room-details", (data) => {
+      if (data) {
+        setRoomDetails({
+          roomName: data.roomName || `Room #${roomId}`,
+          createdBy: data.createdBy || "System Admin",
+          createdAt: data.createdAt ? new Date(data.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null,
+        });
+      }
     });
 
-    socket.on("active-users", (users) => {
-      setParticipants(users);
+    socket.on("participants-update", ({ participants: updatedList }) => {
+      if (Array.isArray(updatedList)) {
+        setParticipants(updatedList);
+      }
     });
 
-    socket.on("code-update", (data) => {
-      if (data && typeof data === "object" && data.code !== undefined) {
-        setCode(data.code);
-      } else if (typeof data === "string") {
-        setCode(data);
+    socket.on("code-activity", ({ user }) => {
+      if (user && user !== storedUser) {
+        setIsPeerTyping(`${user} is editing code...`);
+        const timer = setTimeout(() => setIsPeerTyping(""), 2000);
+        return () => clearTimeout(timer);
+      }
+    });
+
+    // RECEIVE ACCURATE WHITEBOARD USERNAME FROM SOCKET
+    socket.on("whiteboard-activity", ({ user }) => {
+      if (user) {
+        const isSelf = user === storedUser;
+        const displayName = isSelf ? `${user} (You)` : user;
+        setLastDrawUser(displayName);
+        
+        // Log accurately with the real username
+        addActivityLog(`${user} updated the whiteboard`, "whiteboard");
+
+        if (drawTimerRef.current) clearTimeout(drawTimerRef.current);
+        drawTimerRef.current = setTimeout(() => {
+          setLastDrawUser("");
+        }, 3000);
       }
     });
 
@@ -102,38 +188,47 @@ export default function RoomWorkspace() {
           id: `${Date.now()}-${Math.random()}`,
           sender: newMsg.username,
           text: newMsg.message,
-          time: new Date(newMsg.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          isSystem: false,
+          time: newMsg.time ? new Date(newMsg.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          isSystem: !!newMsg.isSystem,
         }
       ]);
-      addActivityLog(`${newMsg.username} sent a message`, "chat");
-    });
 
-    socket.on("code-activity", ({ user }) => {
-      if (user !== storedUser) {
-        setIsPeerTyping(`${user} is editing...`);
-        const timer = setTimeout(() => setIsPeerTyping(""), 2000);
-        return () => clearTimeout(timer);
+      if (!newMsg.isSystem) {
+        addActivityLog(`${newMsg.username} sent a message`, "chat");
       }
     });
 
+    socket.on("file-shared", (fileData) => {
+      setSharedFiles((prev) => [fileData, ...prev]);
+      addActivityLog(`${fileData.sender} shared ${fileData.name}`, "file");
+    });
+
+    socket.on("room-ended", () => {
+      alert("The workspace session has been closed by the host.");
+      navigate("/roomlanding");
+    });
+
     return () => {
-      socket.emit("leave-room", { roomId });
-      socket.off("room-users");
-    socket.off("active-users");
-      socket.off("code-update");
-      socket.off("chat-message");
+      socket.off("connect", handleConnect);
+      socket.off("room-details");
+      socket.off("participants-update");
       socket.off("code-activity");
+      socket.off("whiteboard-activity");
+      socket.off("chat-message");
+      socket.off("file-shared");
+      socket.off("room-ended");
       socket.disconnect();
     };
-  }, [roomId]);
+  }, [roomId, addActivityLog, navigate]);
 
+  // Auto-scroll chat window
   useEffect(() => {
     if (activeTab === "chat") {
       chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, activeTab]);
 
+  // Copy Access Link Handler
   const handleCopyAccessLink = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopiedLink(true);
@@ -141,23 +236,34 @@ export default function RoomWorkspace() {
     setTimeout(() => setCopiedLink(false), 3000);
   };
 
-  const handleCodeChange = (e) => {
-    const newCode = e.target.value;
-    setCode(newCode);
-    if (socketRef.current) {
-      socketRef.current.emit("code-change", { roomId, code: newCode });
-      socketRef.current.emit("code-typing", { roomId, user: username });
+  // Explicit Leave Button Trigger with Popup Confirmation
+  const handleLeaveButtonClick = () => {
+    const confirmLeave = window.confirm(
+      `Are you sure you want to leave ${roomDetails.roomName}? Unsaved active changes will be lost.`
+    );
+    
+    if (confirmLeave) {
+      if (socketRef.current) {
+        socketRef.current.emit("leave-room", { roomId, username });
+        socketRef.current.disconnect();
+      }
+      navigate("/roomlanding");
     }
   };
 
-  const handleMonacoCodeChange = (newVal) => {
-    setCode(newVal);
-    if (socketRef.current) {
-      socketRef.current.emit("code-change", { roomId, code: newVal });
-      socketRef.current.emit("code-typing", { roomId, user: username });
-    }
+  // Immediate local drawing trigger
+  const handleLocalDraw = () => {
+    if (!username) return;
+    setLastDrawUser(`${username} (You)`);
+    addActivityLog(`${username} updated the whiteboard`, "whiteboard");
+
+    if (drawTimerRef.current) clearTimeout(drawTimerRef.current);
+    drawTimerRef.current = setTimeout(() => {
+      setLastDrawUser("");
+    }, 3000);
   };
 
+  // Chat Sender
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
@@ -167,25 +273,27 @@ export default function RoomWorkspace() {
         roomId,
         username,
         message: chatInput.trim(),
+        time: new Date().toISOString(),
       });
     }
 
     setChatInput("");
   };
 
+  // File Upload Handler
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    const newSharedFiles = files.map((file, index) => {
+    files.forEach((file, index) => {
       let sizeStr = `${(file.size / 1024).toFixed(1)} KB`;
       if (file.size > 1024 * 1024) {
         sizeStr = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
       }
 
-      const isCode = file.name.endsWith(".js") || file.name.endsWith(".jsx") || file.name.endsWith(".ts") || file.name.endsWith(".tsx") || file.name.endsWith(".py") || file.name.endsWith(".java") || file.name.endsWith(".html") || file.name.endsWith(".css") || file.name.endsWith(".sql") || file.name.endsWith(".json");
+      const isCode = file.name.match(/\.(js|jsx|ts|tsx|py|java|html|css|sql|json)$/i);
 
-      return {
+      const fileData = {
         id: `file-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
         name: file.name,
         size: sizeStr,
@@ -193,16 +301,14 @@ export default function RoomWorkspace() {
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         type: isCode ? "code" : "text",
       };
+
+      if (socketRef.current) {
+        socketRef.current.emit("share-file", { roomId, fileData });
+      }
     });
 
-    setSharedFiles((prev) => [...newSharedFiles, ...prev]);
-    showToast(`Successfully selected ${files.length} file(s)`);
+    showToast(`Shared ${files.length} file(s) with room`);
   };
-
-
-
-  const lineCount = code.split("\n").length;
-  const lineNumbers = Array.from({ length: lineCount }, (_, i) => i + 1);
 
   return (
     <div className="premium-workspace">
@@ -215,7 +321,7 @@ export default function RoomWorkspace() {
         </div>
       )}
 
-      {/* LEFT SIDEBAR */}
+      {/* LEFT SIDEBAR ROSTER */}
       <aside className="premium-sidebar">
         <div className="sidebar-top">
           
@@ -225,19 +331,33 @@ export default function RoomWorkspace() {
               <Zap size={18} />
             </div>
             <div className="brand-title">
-              <h2>SyncSpace</h2>
+              <h2 title={roomDetails.roomName}>{roomDetails.roomName}</h2>
               <span className="badge-pro"><ShieldCheck size={10} /> ENTERPRISE</span>
             </div>
           </div>
 
-          {/* Access Link Box */}
+          {/* Room Creation Info */}
+          <div className="room-metadata-card">
+            <div className="meta-item">
+              <Crown size={14} className="text-gold" />
+              <span>Created by: <strong>{roomDetails.createdBy}</strong></span>
+            </div>
+            {roomDetails.createdAt && (
+              <div className="meta-item">
+                <Clock size={12} className="text-cyan" />
+                <span>Created at: {roomDetails.createdAt}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Access Key Share Box */}
           <div className="share-box">
             <div className="share-header">
               <Link2 size={12} className="text-cyan" />
               <span>ROOM ACCESS KEY</span>
             </div>
             <button onClick={handleCopyAccessLink} className="share-btn">
-              <span className="room-id-tag">#{roomId}</span>
+              <span className="room-id-tag"><Hash size={12} />#{roomId}</span>
               {copiedLink ? <Check size={14} className="text-emerald" /> : <Copy size={14} />}
             </button>
           </div>
@@ -246,32 +366,41 @@ export default function RoomWorkspace() {
           <div className="roster-section">
             <div className="roster-header">
               <Users size={13} className="text-cyan" />
-              <span>LIVE ACTIVE MEMBERS ({participants.length})</span>
+              <span>CONNECTED MEMBERS ({participants.length})</span>
             </div>
 
             <div className="roster-list">
               {participants.length === 0 ? (
-                <p className="empty-text">Connecting to room channel...</p>
+                <p className="empty-text">Fetching workspace members...</p>
               ) : (
-                participants.map((member) => (
-                  <div key={member.socketId} className="roster-card">
-                    <div className="roster-info">
-                      <div className="avatar">
-                        {member.username ? member.username.charAt(0).toUpperCase() : "U"}
+                participants.map((member) => {
+                  const isAdmin = member.username === roomDetails.createdBy;
+                  const isSelf = member.username === username;
+                  return (
+                    <div key={member.socketId || member.username} className="roster-card">
+                      <div className="roster-info">
+                        <div className="avatar">
+                          {member.username ? member.username.charAt(0).toUpperCase() : "U"}
+                        </div>
+                        <span className="username">
+                          {member.username}
+                          {isSelf && <span className="you-tag"> (You)</span>}
+                          {isAdmin && (
+                            <span className="admin-tag">
+                              <Crown size={10} /> Admin
+                            </span>
+                          )}
+                        </span>
                       </div>
-                      <span className="username">
-                        {member.username}
-                        {member.username === username && <span className="you-tag">(You)</span>}
-                      </span>
+                      <span className="status-dot"></span>
                     </div>
-                    <span className="status-dot"></span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
 
-          {/* LIVE WORKSPACE LOGS */}
+          {/* REAL-TIME WORKSPACE AUDIT LOG */}
           <div className="activity-section">
             <div className="activity-header">
               <Activity size={13} className="text-indigo" />
@@ -296,11 +425,11 @@ export default function RoomWorkspace() {
 
         </div>
 
-        {/* Exit Workspace */}
+        {/* Leave Workspace Button */}
         <div className="sidebar-bottom">
-          <Link to="/roomlanding" className="exit-btn">
-            <LogOut size={14} /> Exit Workspace
-          </Link>
+          <button onClick={handleLeaveButtonClick} className="exit-btn">
+            <LogOut size={14} /> Leave Workspace
+          </button>
         </div>
       </aside>
 
@@ -314,7 +443,7 @@ export default function RoomWorkspace() {
               onClick={() => setActiveTab("editor")}
               className={`nav-btn ${activeTab === "editor" ? "active" : ""}`}
             >
-              <Code2 size={14} /> IDE Editor
+              <Code2 size={14} /> Code IDE
             </button>
 
             <button
@@ -339,7 +468,7 @@ export default function RoomWorkspace() {
             </button>
           </div>
 
-          {/* Peer Activity Indicator */}
+          {/* Status Bar */}
           <div className="header-status">
             {isPeerTyping && (
               <span className="typing-indicator">
@@ -353,30 +482,56 @@ export default function RoomWorkspace() {
           </div>
         </header>
 
-        {/* Dynamic Main Content Panel */}
+        {/* Workspace Stage */}
         <div className="workspace-stage">
           
-          {/* TAB 1: VS Code Dark Theme Editor */}
+          {/* TAB 1: CODE EDITOR PAGE */}
           {activeTab === "editor" && (
-            <div className="vscode-editor" style={{ padding: 0 }}>
-              <CodeEditor
-                language="javascript"
-                value={code}
-                onChange={handleMonacoCodeChange}
-              />
+            <div className="code-editor-page-wrapper" style={{ height: "100%", width: "100%" }}>
+              <CodeEditorPage socket={socketRef.current} roomId={roomId} currentUser={username} />
             </div>
           )}
 
-          {/* TAB 2: Canvas Whiteboard */}
-          <div style={{ display: activeTab === "whiteboard" ? "block" : "none", height: "100%", width: "100%" }}>
-            <Whiteboard socket={socketRef.current} roomId={roomId} />
+          {/* TAB 2: CANVAS WHITEBOARD WITH ACTIVE DRAWER OVERLAY */}
+          <div 
+            style={{ display: activeTab === "whiteboard" ? "block" : "none", height: "100%", width: "100%", position: "relative" }}
+            onMouseDown={handleLocalDraw}
+          >
+            {/* FLOATING DRAWER BADGE SHOWING USERNAME */}
+            {lastDrawUser && (
+              <div 
+                className="whiteboard-author-badge" 
+                style={{ 
+                  position: "absolute", 
+                  top: 16, 
+                  right: 16, 
+                  zIndex: 20, 
+                  background: "rgba(15, 23, 42, 0.9)", 
+                  color: "#38bdf8", 
+                  border: "1px solid rgba(56, 189, 248, 0.4)",
+                  padding: "8px 14px", 
+                  borderRadius: "8px", 
+                  fontSize: "13px", 
+                  fontWeight: "600",
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: "8px",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+                  pointerEvents: "none"
+                }}
+              >
+                <Palette size={14} className="text-cyan" /> 
+                <span>Drawing by: <strong>{lastDrawUser}</strong></span>
+              </div>
+            )}
+            <Whiteboard socket={socketRef.current} roomId={roomId} currentUser={username} />
           </div>
 
-          {/* TAB 3: Real-Time Chat Panel */}
+          {/* TAB 3: REAL-TIME CHAT PANEL */}
           {activeTab === "chat" && (
             <div className="chat-container">
               <div className="chat-header">
-                <h3><MessageSquare size={16} className="text-cyan" /> Secure Room Channel</h3>
+                <h3><MessageSquare size={16} className="text-cyan" /> {roomDetails.roomName} Channel</h3>
                 <span>Socket Synced</span>
               </div>
 
@@ -418,7 +573,7 @@ export default function RoomWorkspace() {
             </div>
           )}
 
-          {/* TAB 4: File Sharing Panel */}
+          {/* TAB 4: FILE SHARING VAULT */}
           {activeTab === "files" && (
             <div className="files-container">
               <div className="vault-header">
