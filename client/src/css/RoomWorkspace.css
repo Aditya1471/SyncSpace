@@ -854,11 +854,20 @@ opacity:.3;
 
 .send-btn{
     width:52px;
+    height:52px;
     border:none;
-    border-radius:12px;
+    border-radius:14px;
     cursor:pointer;
-    background:#2563eb;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:linear-gradient(135deg,#2563eb,#38bdf8);
     color:white;
+
+    font-size:18px;
+
     transition:.3s;
 }
 
@@ -1195,4 +1204,4 @@ opacity:.3;
   .brand-title {
     display:none;
   }
-}
+}

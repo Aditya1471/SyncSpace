@@ -1090,7 +1090,7 @@ function Whiteboard({ socket, roomId }) {
         >
           ✏️ {drawingUser}
         </div>
-      )}
+      )} 
       {remoteCursor && (
         <div
           style={{
