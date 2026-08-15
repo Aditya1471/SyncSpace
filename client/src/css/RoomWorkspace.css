@@ -1205,3 +1205,22 @@ opacity:.3;
     display:none;
   }
 }
+/* Ensure the stage container expands fully inside main flex container */
+.workspace-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: calc(100vh - 60px); /* Fill entire viewport below navbar */
+  overflow: hidden;
+}
+
+/* Force persistent tab wrappers to expand 100% in height and width */
+.code-editor-page-wrapper {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

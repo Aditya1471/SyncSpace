@@ -1,16 +1,12 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import MonacoEditor, { loader } from "@monaco-editor/react";
 import {
   FaRegFileCode,
   FaSearch,
   FaCodeBranch,
   FaPlay,
-  FaPuzzlePiece,
   FaCog,
   FaBell,
-  FaTerminal,
-  FaTrash,
-  FaChevronRight,
   FaFileMedical,
   FaFolderOpen,
   FaFileUpload,
@@ -19,10 +15,17 @@ import {
   FaLayerGroup,
   FaFolderPlus,
   FaFolder,
+  FaFolderOpen as FaFolderOpenIcon,
+  FaChevronRight,
+  FaChevronDown,
   FaTimes,
-  FaTerminal as FaConsoleIcon
+  FaTerminal as FaConsoleIcon,
+  FaTerminal,
+  FaSpinner,
+  FaTrash
 } from "react-icons/fa";
 import axios from "axios";
+import { io } from "socket.io-client";
 import "./CodeEditorPage.css";
 
 loader.config({
@@ -31,48 +34,134 @@ loader.config({
   }
 });
 
-export default function CodeEditorPage() {
-  /* ================================================
-                      STATES
-  ================================================ */
+const INITIAL_FILES = [
+  {
+    id: "1",
+    name: "Main.java",
+    path: "src/Main.java",
+    folder: "src",
+    content: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello from Server Java Execution!");\n        int a = 15;\n        int b = 25;\n        System.out.println("Sum = " + (a + b));\n    }\n}',
+    language: "java"
+  },
+  {
+    id: "2",
+    name: "main.py",
+    path: "src/main.py",
+    folder: "src",
+    content: 'import sys\n\nprint("Hello from Backend Python Runner!")\nprint(f"Python Version: {sys.version}")\n\nfor i in range(1, 4):\n    print(f"Processing item {i}")',
+    language: "python"
+  },
+  {
+    id: "3",
+    name: "main.cpp",
+    path: "src/main.cpp",
+    folder: "src",
+    content: '#include <iostream>\n\nint main() {\n    std::cout << "Hello from Server C++ Execution!" << std::endl;\n    return 0;\n}',
+    language: "cpp"
+  }
+];
+
+const FolderTreeNode = React.memo(({ node, activeFileId, onSelectFile, onDeleteFile, onRunFile, isRunning, level = 0 }) => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  if (!node) return null;
+
+  const folderEntries = Object.entries(node.children || {});
+  const filesList = node.files || [];
+
+  return (
+    <div className="tree-branch">
+      {node.name !== "root" && (
+        <div
+          className="vscode-folder-row"
+          onClick={() => setIsOpen((prev) => !prev)}
+          style={{ paddingLeft: `${level * 14 + 10}px` }}
+        >
+          <span className="tree-arrow">
+            {isOpen ? <FaChevronDown size={10} /> : <FaChevronRight size={10} />}
+          </span>
+          {isOpen ? (
+            <FaFolderOpenIcon className="vscode-folder-icon open" />
+          ) : (
+            <FaFolder className="vscode-folder-icon" />
+          )}
+          <span className="vscode-folder-name">{node.name}</span>
+        </div>
+      )}
+
+      {(isOpen || node.name === "root") && (
+        <div className="vscode-tree-container">
+          {folderEntries.map(([folderName, subNode]) => (
+            <FolderTreeNode
+              key={folderName}
+              node={subNode}
+              activeFileId={activeFileId}
+              onSelectFile={onSelectFile}
+              onDeleteFile={onDeleteFile}
+              onRunFile={onRunFile}
+              isRunning={isRunning}
+              level={level + 1}
+            />
+          ))}
+
+          {filesList.map((file) => {
+            const extParts = file.name.split(".");
+            const ext = extParts.length > 1 ? extParts.pop() : "file";
+
+            return (
+              <div
+                key={file.id}
+                className={`file-row ${file.id === activeFileId ? "active" : ""}`}
+                style={{ paddingLeft: `${(level + 1) * 14 + 10}px` }}
+                onClick={() => onSelectFile(file.id)}
+              >
+                <span className="file-row-main">
+                  <span className={`file-ext-tag ext-${ext}`}>{ext}</span>
+                  <span className="file-row-name">{file.name}</span>
+                </span>
+                
+                <div className="file-row-actions">
+                  <button
+                    className="file-action-btn run-btn"
+                    onClick={(e) => onRunFile(e, file)}
+                    disabled={isRunning}
+                    title={`Run ${file.name}`}
+                  >
+                    <FaPlay size={9} />
+                  </button>
+                  <button
+                    className="file-action-btn delete-btn"
+                    onClick={(e) => onDeleteFile(e, file.id)}
+                    title="Close file"
+                  >
+                    <FaTimes size={10} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+});
+
+export default function CodeEditorPage({ roomId = "default-room" }) {
   const [activePanel, setActivePanel] = useState("explorer");
-
-  const [files, setFiles] = useState([
-    {
-      id: "1",
-      name: "main.js",
-      path: "main.js",
-      folder: "src",
-      content: '// Welcome to SyncSpace IDE\nconsole.log("SyncSpace Engine Initialized.");\n\nconst greet = (name) => `Hello, ${name}!`;\nconsole.log(greet("Developer"));',
-      language: "javascript"
-    },
-    {
-      id: "2",
-      name: "interactive.py",
-      path: "interactive.py",
-      folder: "src",
-      content: '# Standard Python input() - Works in Terminal automatically!\nname = input("Enter your name: ")\nprint(f"Hello, {name}!")\n\nage = int(input("Enter your age: "))\nprint(f"Next year you will be {age + 1} years old.")',
-      language: "python"
-    }
-  ]);
-
-  const [folders, setFolders] = useState(["src", "public"]);
-
-  const [activeFileId, setActiveFileId] = useState("2");
-  const [code, setCode] = useState(files[1].content);
-  const [language, setLanguage] = useState(files[1].language);
-
-  const [gitCount, setGitCount] = useState(0);
-  const [notificationCount, setNotificationCount] = useState(0);
+  const [files, setFiles] = useState(INITIAL_FILES);
+  const [folders, setFolders] = useState(["src"]);
+  const [activeFileId, setActiveFileId] = useState("1");
 
   const [output, setOutput] = useState("");
-  const [terminalOutput, setTerminalOutput] = useState("⚡ SyncSpace Execution Environment Ready\nType CLI commands or click 'Run' to execute scripts...\n");
-  const [command, setCommand] = useState("");
+  const [terminalOutput, setTerminalOutput] = useState(
+    "⚡ SyncSpace IDE connected to Execution Engine.\nPress 'Run' on any file to compile & execute...\n"
+  );
   const [status, setStatus] = useState("System Ready");
-  const [isPyodideLoading, setIsPyodideLoading] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
 
-  // Terminal Input Bridge Resolver
-  const inputResolverRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState("");
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [showFileModal, setShowFileModal] = useState(false);
@@ -80,142 +169,226 @@ export default function CodeEditorPage() {
   const [newFileName, setNewFileName] = useState("");
   const [selectedFolderForFile, setSelectedFolderForFile] = useState("root");
 
+  const activeFile = useMemo(() => {
+    return files.find((f) => f.id === activeFileId) || files[0] || null;
+  }, [files, activeFileId]);
+
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
-  const terminalRef = useRef(null);
-  const pyodideRef = useRef(null);
+  const socketRef = useRef(null);
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-  const api = axios.create({ baseURL: API_URL });
-
-  api.interceptors.request.use(
-    (config) => {
-      try {
-        const token = localStorage.getItem("token");
-        if (token) config.headers.Authorization = `Bearer ${token}`;
-      } catch (err) {}
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
 
   useEffect(() => {
-    const fetchActivity = async () => {
-      try {
-        const resGit = await api.get("/api/activity/git");
-        if (resGit?.data) setGitCount(resGit.data.changedFiles || 0);
-      } catch (e) {
-        setGitCount(0);
+    socketRef.current = io(API_URL, {
+      transports: ["websocket", "polling"],
+      auth: {
+        token: localStorage.getItem("token") || localStorage.getItem("authToken")
       }
+    });
 
-      try {
-        const resNotify = await api.get("/api/activity/notifications");
-        if (resNotify?.data) setNotificationCount(resNotify.data.count || 0);
-      } catch (e) {
-        setNotificationCount(0);
-      }
+    const socket = socketRef.current;
+    socket.emit("join-room", { roomId });
+
+    socket.on("code-change", ({ fileId, content }) => {
+      setFiles((prevFiles) =>
+        prevFiles.map((file) => (file.id === fileId ? { ...file, content } : file))
+      );
+    });
+
+    socket.on("file-created", (newFile) => {
+      setFiles((prevFiles) => {
+        if (prevFiles.some((f) => f.id === newFile.id)) return prevFiles;
+        return [...prevFiles, newFile];
+      });
+    });
+
+    socket.on("file-deleted", ({ fileId }) => {
+      setFiles((prevFiles) => prevFiles.filter((f) => f.id !== fileId));
+    });
+
+    socket.on("execution-result", ({ fileId, output: resOutput, isError }) => {
+      const targetFile = files.find((f) => f.id === fileId);
+      const filename = targetFile ? targetFile.name : "File";
+      
+      setOutput(resOutput);
+      setTerminalOutput((prev) =>
+        `${prev}\n--- [${isError ? "FAILED" : "SUCCESS"}] Remote Execution: ${filename} ---\n${resOutput}\n`
+      );
+    });
+
+    return () => {
+      socket.off("code-change");
+      socket.off("file-created");
+      socket.off("file-deleted");
+      socket.off("execution-result");
+      socket.disconnect();
     };
-    fetchActivity();
-  }, []);
+  }, [API_URL, roomId]);
+
+  const fileTreeRoot = useMemo(() => {
+    const root = { name: "root", type: "folder", children: {}, files: [] };
+
+    files.forEach((file) => {
+      const parts = file.path ? file.path.split("/") : [file.name];
+      let current = root;
+
+      for (let i = 0; i < parts.length - 1; i++) {
+        const folderName = parts[i];
+        if (!current.children[folderName]) {
+          current.children[folderName] = {
+            name: folderName,
+            type: "folder",
+            children: {},
+            files: []
+          };
+        }
+        current = current.children[folderName];
+      }
+      current.files.push(file);
+    });
+
+    return root;
+  }, [files]);
 
   const detectLanguage = (filename) => {
     const ext = filename.split(".").pop().toLowerCase();
-    switch (ext) {
-      case "js": case "jsx": return "javascript";
-      case "ts": case "tsx": return "typescript";
-      case "py": return "python";
-      case "html": case "htm": return "html";
-      case "css": return "css";
-      case "json": return "json";
-      case "cpp": case "c": case "cc": case "hpp": return "cpp";
-      case "java": return "java";
-      case "php": return "php";
-      case "sql": return "sql";
-      case "md": return "markdown";
-      default: return "plaintext";
-    }
+    const map = {
+      js: "javascript", jsx: "javascript",
+      ts: "typescript", tsx: "typescript",
+      py: "python", java: "java",
+      cpp: "cpp", c: "c", cc: "cpp", hpp: "cpp", h: "c",
+      html: "html", htm: "html",
+      css: "css", json: "json", sql: "sql", md: "markdown"
+    };
+    return map[ext] || "plaintext";
   };
 
-  /* ================================================
-     FAST NON-BLOCKING FILE & FOLDER IMPORT
-  ================================================ */
+  const isTextFile = (filename) => {
+    const binaryExtensions = [
+      "class", "pyc", "exe", "dll", "so", "o", "obj",
+      "png", "jpg", "jpeg", "gif", "zip", "jar", "pdf", "ico"
+    ];
+    const ext = filename.split(".").pop().toLowerCase();
+    return !binaryExtensions.includes(ext);
+  };
+
   const readFileAsync = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target.result || "");
+      reader.onload = (e) => resolve(e.target?.result || "");
       reader.onerror = () => resolve("");
       reader.readAsText(file);
     });
   };
 
   const handleImportFiles = async (e) => {
-    const importedFiles = Array.from(e.target.files);
-    if (!importedFiles.length) return;
+    setIsLoading(true);
+    setLoadingText("Initializing upload...");
+    setLoadingProgress(0);
 
-    setStatus(`Importing ${importedFiles.length} file(s)...`);
+    const rawFiles = Array.from(e.target.files || []);
+    const importedFiles = rawFiles.filter((f) => isTextFile(f.name));
 
-    // Process files in non-blocking chunk promises
-    const newFileObjects = await Promise.all(
-      importedFiles.map(async (file) => {
-        const content = await readFileAsync(file);
-        return {
-          id: `${Date.now()}-${Math.random()}`,
-          name: file.name,
-          path: file.name,
-          folder: "",
-          content,
-          language: detectLanguage(file.name)
-        };
-      })
-    );
+    if (!importedFiles.length) {
+      setIsLoading(false);
+      return;
+    }
+
+    const newFileObjects = [];
+    for (let i = 0; i < importedFiles.length; i++) {
+      const file = importedFiles[i];
+      const content = await readFileAsync(file);
+      const newFile = {
+        id: `${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`,
+        name: file.name,
+        path: file.name,
+        folder: "",
+        content,
+        language: detectLanguage(file.name)
+      };
+      newFileObjects.push(newFile);
+
+      if (socketRef.current) {
+        socketRef.current.emit("file-created", { roomId, file: newFile });
+      }
+
+      setLoadingProgress(Math.round(((i + 1) / importedFiles.length) * 100));
+    }
 
     setFiles((prev) => [...prev, ...newFileObjects]);
-    if (newFileObjects.length > 0) selectFile(newFileObjects[0]);
-    setStatus(`Imported ${newFileObjects.length} file(s) instantly.`);
-    e.target.value = null;
+    if (newFileObjects.length > 0) setActiveFileId(newFileObjects[0].id);
+    setStatus(`Imported ${newFileObjects.length} file(s).`);
+    e.target.value = "";
+    setIsLoading(false);
   };
 
   const handleImportFolder = async (e) => {
-    const importedFiles = Array.from(e.target.files);
-    if (!importedFiles.length) return;
+    setIsLoading(true);
+    setLoadingText("Analyzing directory structure...");
+    setLoadingProgress(1);
 
-    setStatus(`Processing folder structure (${importedFiles.length} files)...`);
-    const newFoldersSet = new Set(folders);
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-    const parsedFiles = await Promise.all(
-      importedFiles.map(async (file) => {
-        const relativePath = file.webkitRelativePath || file.name;
-        const pathParts = relativePath.split("/");
+    const rawFiles = Array.from(e.target.files || []);
+    const importedFiles = rawFiles.filter((f) => isTextFile(f.name));
 
-        if (pathParts.length > 1) {
-          const folderPath = pathParts.slice(0, pathParts.length - 1).join("/");
-          newFoldersSet.add(folderPath);
-        }
+    if (!importedFiles.length) {
+      setIsLoading(false);
+      return;
+    }
 
-        const content = await readFileAsync(file);
-        const fileName = pathParts[pathParts.length - 1];
-        const folderName = pathParts.length > 1 ? pathParts.slice(0, pathParts.length - 1).join("/") : "";
+    const newFoldersSet = new Set();
+    const parsedFiles = [];
+    const totalCount = importedFiles.length;
 
-        return {
-          id: `${Date.now()}-${Math.random()}`,
-          name: fileName,
-          path: relativePath,
-          folder: folderName,
-          content,
-          language: detectLanguage(fileName)
-        };
-      })
-    );
+    for (let i = 0; i < totalCount; i++) {
+      const file = importedFiles[i];
+      const relativePath = file.webkitRelativePath || file.name;
+      const pathParts = relativePath.split("/");
 
-    setFolders(Array.from(newFoldersSet));
-    setFiles((prev) => [...prev, ...parsedFiles]);
-    setStatus(`Folder imported successfully (${parsedFiles.length} files).`);
-    e.target.value = null;
+      if (pathParts.length > 1) {
+        const folderPath = pathParts.slice(0, pathParts.length - 1).join("/");
+        newFoldersSet.add(folderPath);
+      }
+
+      const content = await readFileAsync(file);
+      const fileName = pathParts[pathParts.length - 1];
+      const folderName = pathParts.length > 1 ? pathParts.slice(0, pathParts.length - 1).join("/") : "";
+
+      const newFile = {
+        id: `${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`,
+        name: fileName,
+        path: relativePath,
+        folder: folderName,
+        content,
+        language: detectLanguage(fileName)
+      };
+
+      parsedFiles.push(newFile);
+
+      if (socketRef.current) {
+        socketRef.current.emit("file-created", { roomId, file: newFile });
+      }
+
+      if (i % 15 === 0 || i === totalCount - 1) {
+        setLoadingProgress(Math.round(((i + 1) / totalCount) * 100));
+        setLoadingText(`Reading files (${i + 1}/${totalCount})...`);
+        await new Promise((r) => setTimeout(r, 0));
+      }
+    }
+
+    if (parsedFiles.length > 0) {
+      setFolders(Array.from(newFoldersSet));
+      setFiles(parsedFiles);
+      setActiveFileId(parsedFiles[0].id);
+      setStatus(`Loaded directory tree with ${parsedFiles.length} files.`);
+    }
+
+    e.target.value = "";
+    setIsLoading(false);
   };
 
-  /* ================================================
-            FOLDER & FILE MANAGEMENT
-  ================================================ */
   const handleCreateFolder = () => {
     if (!newFolderName.trim()) return;
     const formatted = newFolderName.trim().replace(/\s+/g, "_");
@@ -238,74 +411,59 @@ export default function CodeEditorPage() {
       name,
       path: targetFolder ? `${targetFolder}/${name}` : name,
       folder: targetFolder,
-      content: `# ${name}\n`,
+      content: `// ${name}\n`,
       language: detectedLang
     };
 
     setFiles((prev) => [...prev, newFile]);
     setActiveFileId(newFile.id);
-    setCode(newFile.content);
-    setLanguage(detectedLang);
-    setStatus(`Created ${newFile.name}`);
+    setStatus(`Created file ${newFile.name}`);
+
+    if (socketRef.current) {
+      socketRef.current.emit("file-created", { roomId, file: newFile });
+    }
+
     setNewFileName("");
     setShowFileModal(false);
   };
 
-  const selectFile = (file) => {
-    setFiles((prev) =>
-      prev.map((f) => (f.id === activeFileId ? { ...f, content: code } : f))
+  const handleCodeChange = (newCode = "") => {
+    if (!activeFile) return;
+
+    setFiles((prevFiles) =>
+      prevFiles.map((f) => (f.id === activeFile.id ? { ...f, content: newCode } : f))
     );
-    setActiveFileId(file.id);
-    setCode(file.content);
-    setLanguage(detectLanguage(file.name));
-    setStatus(`Active: ${file.name}`);
+
+    if (socketRef.current) {
+      socketRef.current.emit("code-change", {
+        roomId,
+        fileId: activeFile.id,
+        content: newCode
+      });
+    }
   };
 
   const deleteFile = (e, id) => {
     e.stopPropagation();
     if (files.length <= 1) {
-      alert("At least one file must remain active.");
+      alert("At least one file must remain open.");
       return;
     }
     const filtered = files.filter((f) => f.id !== id);
     setFiles(filtered);
-    if (activeFileId === id) selectFile(filtered[0]);
-  };
 
-  const handleCodeChange = (newCode) => {
-    const value = newCode || "";
-    setCode(value);
-    setFiles((prev) =>
-      prev.map((f) => (f.id === activeFileId ? { ...f, content: value } : f))
-    );
-  };
-
-  const saveFileToCustomLocation = useCallback(async () => {
-    const activeFile = files.find((f) => f.id === activeFileId);
-    if (!activeFile) return;
-
-    if ("showSaveFilePicker" in window) {
-      try {
-        const handle = await window.showSaveFilePicker({
-          suggestedName: activeFile.name,
-          types: [
-            {
-              description: "Source Code File",
-              accept: { "text/plain": [`.${activeFile.name.split(".").pop()}`] }
-            }
-          ]
-        });
-        const writable = await handle.createWritable();
-        await writable.write(code);
-        await writable.close();
-        setStatus(`Saved to ${handle.name}`);
-        return;
-      } catch (err) {
-        if (err.name === "AbortError") return;
-      }
+    if (socketRef.current) {
+      socketRef.current.emit("file-deleted", { roomId, fileId: id });
     }
 
-    const blob = new Blob([code], { type: "text/plain;charset=utf-8" });
+    if (activeFileId === id && filtered.length > 0) {
+      setActiveFileId(filtered[0].id);
+    }
+  };
+
+  const exportCurrentFile = useCallback(async () => {
+    if (!activeFile) return;
+    const blob = new Blob([activeFile.content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -315,308 +473,140 @@ export default function CodeEditorPage() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     setStatus(`Exported ${activeFile.name}`);
-  }, [files, activeFileId, code]);
+  }, [activeFile]);
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        saveFileToCustomLocation();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [saveFileToCustomLocation]);
+  const runCodeOnBackend = async (targetFile = activeFile) => {
+    if (!targetFile) return;
 
-  /* ================================================
-      PYTHON TERMINAL ENGINE (AUTOMATIC ASYNC INPUT)
-  ================================================ */
-  useEffect(() => {
-    if (!document.getElementById("pyodide-script") && !window.loadPyodide) {
-      const script = document.createElement("script");
-      script.id = "pyodide-script";
-      script.src = "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js";
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, []);
-
-  const loadPyodideEngine = async () => {
-    if (pyodideRef.current) return pyodideRef.current;
-
-    let attempts = 0;
-    while (!window.loadPyodide && attempts < 15) {
-      await new Promise((res) => setTimeout(res, 300));
-      attempts++;
+    if (targetFile.id !== activeFileId) {
+      setActiveFileId(targetFile.id);
     }
 
-    if (window.loadPyodide) {
-      setIsPyodideLoading(true);
-      setStatus("Initializing WebAssembly Python Engine...");
-      pyodideRef.current = await window.loadPyodide();
+    setIsRunning(true);
+    setStatus(`Executing ${targetFile.name}...`);
+    setOutput(`Running ${targetFile.name} process on server...`);
 
-      // Terminal bridge callback
-      window.__getTerminalInput = (promptText) => {
-        return new Promise((resolve) => {
-          setTerminalOutput((prev) => `${prev}${promptText}`);
-          if (terminalRef.current) terminalRef.current.focus();
-          inputResolverRef.current = resolve;
-        });
-      };
-
-      setIsPyodideLoading(false);
-      setStatus("Python Engine Ready");
-      return pyodideRef.current;
-    }
-    return null;
-  };
-
-  const handleTerminalSubmit = () => {
-    if (!command.trim() && !inputResolverRef.current) return;
-
-    const currentVal = command;
-    setCommand("");
-
-    // Resolve active Python input() request from terminal
-    if (inputResolverRef.current) {
-      setTerminalOutput((prev) => `${prev}${currentVal}\n`);
-      const resolve = inputResolverRef.current;
-      inputResolverRef.current = null;
-      resolve(currentVal);
-      return;
-    }
-
-    setTerminalOutput((prev) => `${prev}\n$ ${currentVal}\n[Command registered]`);
-  };
-
-  const runCode = async () => {
-    setStatus("Running Pipeline...");
-    setOutput("");
-
-    // 1. JavaScript Engine
-    if (language === "javascript") {
-      const logs = [];
-      const customConsole = {
-        log: (...args) => logs.push(args.map((a) => (typeof a === "object" ? JSON.stringify(a) : a)).join(" ")),
-        error: (...args) => logs.push("[Error] " + args.join(" ")),
-        warn: (...args) => logs.push("[Warn] " + args.join(" "))
-      };
-
-      try {
-        const runFn = new Function("console", code);
-        runFn(customConsole);
-        setOutput(logs.join("\n") || "✔ Executed successfully.");
-        setStatus("Execution Succeeded");
-      } catch (err) {
-        setOutput(err.toString());
-        setStatus("Execution Error");
-      }
-      return;
-    }
-
-    // 2. Python Engine (Transparently converts input() -> await input())
-    if (language === "python") {
-      try {
-        const pyodide = await loadPyodideEngine();
-        if (!pyodide) {
-          setOutput("Python engine loading... Please click Run again in a moment.");
-          return;
-        }
-
-        setTerminalOutput((prev) => `${prev}\n--- Executing Python Script ---\n`);
-
-        await pyodide.runPythonAsync(`
-import sys
-import js
-
-async def custom_input(prompt=""):
-    result = await js.__getTerminalInput(str(prompt))
-    return str(result)
-
-__builtins__.input = custom_input
-        `);
-
-        pyodide.runPython(`
-import io
-sys.stdout = io.StringIO()
-        `);
-
-        // Transform synchronous input(...) calls to await input(...)
-        const transformedCode = code.replace(/(?<!await\s+)input\s*\(/g, "await input(");
-
-        await pyodide.runPythonAsync(transformedCode);
-
-        const stdout = pyodide.runPython("sys.stdout.getvalue()");
-        setOutput(stdout || "✔ Python execution complete.");
-        setTerminalOutput((prev) => `${prev}--- Execution Finished ---\n`);
-        setStatus("Execution Succeeded");
-      } catch (err) {
-        setOutput(err.toString());
-        setTerminalOutput((prev) => `${prev}\n[Python Exception] ${err.toString()}\n`);
-        setStatus("Execution Error");
-      }
-      return;
-    }
-
-    // 3. Fallback to Server Runner
     try {
-      const response = await api.post("/api/run", { language, code });
-      setOutput(response.data.output || response.data.message || "Executed on backend server.");
-      setStatus("Backend Executed");
-    } catch (err) {
-      setOutput(`Server Output: ${err.response?.data?.error || err.message}`);
-      setStatus("Execution Failed");
+      const token = localStorage.getItem("token") || localStorage.getItem("authToken");
+
+      const response = await axios.post(
+        `${API_URL}/api/run`,
+        {
+          language: targetFile.language,
+          code: targetFile.content,
+          filename: targetFile.name
+        },
+        {
+          headers: { Authorization: token ? `Bearer ${token}` : "" },
+          timeout: 10000
+        }
+      );
+
+      const isSuccess = response.data.success;
+      const resOutput = isSuccess
+        ? response.data.output || "Execution completed with no output."
+        : response.data.error || "Compilation/Runtime Error";
+
+      setOutput(resOutput);
+      setTerminalOutput(
+        (prev) => `${prev}\n--- [${isSuccess ? "SUCCESS" : "FAILED"}] ${targetFile.name} (${targetFile.language}) ---\n${resOutput}\n`
+      );
+      setStatus(isSuccess ? "Execution Complete" : "Execution Failed");
+
+      if (socketRef.current) {
+        socketRef.current.emit("execution-result", {
+          roomId,
+          fileId: targetFile.id,
+          output: resOutput,
+          isError: !isSuccess
+        });
+      }
+    } catch (error) {
+      let errText = "Backend execution server unreachable.";
+      if (error.response?.data?.error) {
+        errText = error.response.data.error;
+      } else if (error.code === "ERR_NETWORK") {
+        errText = `Network Error: Cannot connect to backend server at ${API_URL}.`;
+      } else if (error.message) {
+        errText = error.message;
+      }
+
+      setOutput(`Backend Execution Error:\n${errText}`);
+      setTerminalOutput((prev) => `${prev}\n[SERVER ERROR] ${errText}\n`);
+      setStatus("Server Unreachable");
+    } finally {
+      setIsRunning(false);
     }
+  };
+
+  const handleRunFileClick = (e, file) => {
+    e.stopPropagation();
+    runCodeOnBackend(file);
   };
 
   return (
     <div className="syncspace-editor-root">
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="loading-card">
+            <FaSpinner className="spinner-icon spinning" />
+            <h3 className="loading-title">Syncing Workspace</h3>
+            <p className="loading-subtitle">{loadingText}</p>
+            <div className="progress-bar-container">
+              <div className="progress-bar-fill" style={{ width: `${loadingProgress}%` }}></div>
+            </div>
+            <span className="progress-percentage">{loadingProgress}%</span>
+          </div>
+        </div>
+      )}
+
       <input type="file" ref={fileInputRef} onChange={handleImportFiles} multiple style={{ display: "none" }} />
       <input type="file" ref={folderInputRef} onChange={handleImportFolder} webkitdirectory="true" directory="true" style={{ display: "none" }} />
 
       {/* ACTIVITY BAR */}
       <aside className="syncspace-activity-bar">
-        <div className="activity-brand" title="SyncSpace IDE">
-          <div className="brand-logo-mark">S</div>
-        </div>
-
+        <div className="brand-logo-mark" title="SyncSpace IDE">S</div>
         <nav className="activity-nav-top">
-          <button
-            className={`activity-btn ${activePanel === "explorer" ? "active" : ""}`}
-            onClick={() => setActivePanel("explorer")}
-            title="Explorer"
-          >
-            <FaRegFileCode />
-          </button>
-          <button
-            className={`activity-btn ${activePanel === "search" ? "active" : ""}`}
-            onClick={() => setActivePanel("search")}
-            title="Search"
-          >
-            <FaSearch />
-          </button>
-          <button
-            className={`activity-btn ${activePanel === "git" ? "active" : ""}`}
-            onClick={() => setActivePanel("git")}
-            title="Source Control"
-          >
-            <FaCodeBranch />
-            {gitCount > 0 && <span className="activity-badge">{gitCount}</span>}
-          </button>
-          <button
-            className={`activity-btn ${activePanel === "run" ? "active" : ""}`}
-            onClick={() => setActivePanel("run")}
-            title="Run & Debug"
-          >
-            <FaPlay />
-          </button>
+          <button className={`activity-btn ${activePanel === "explorer" ? "active" : ""}`} onClick={() => setActivePanel("explorer")} title="Explorer"><FaRegFileCode /></button>
+          <button className={`activity-btn ${activePanel === "search" ? "active" : ""}`} onClick={() => setActivePanel("search")} title="Search"><FaSearch /></button>
+          <button className={`activity-btn ${activePanel === "git" ? "active" : ""}`} onClick={() => setActivePanel("git")} title="Source Control"><FaCodeBranch /></button>
+          <button className="activity-btn" onClick={() => runCodeOnBackend()} title="Run Active File"><FaPlay /></button>
         </nav>
-
         <div className="activity-nav-bottom">
-          <button
-            className={`activity-btn ${activePanel === "notifications" ? "active" : ""}`}
-            onClick={() => setActivePanel("notifications")}
-            title="Notifications"
-          >
-            <FaBell />
-            {notificationCount > 0 && <span className="activity-badge alert">{notificationCount}</span>}
-          </button>
-          <button
-            className={`activity-btn ${activePanel === "settings" ? "active" : ""}`}
-            onClick={() => setActivePanel("settings")}
-            title="Settings"
-          >
-            <FaCog />
-          </button>
+          <button className="activity-btn" title="Notifications"><FaBell /></button>
+          <button className="activity-btn" title="Settings"><FaCog /></button>
         </div>
       </aside>
 
-      {/* SIDEBAR PANEL */}
+      {/* SIDEBAR EXPLORER */}
       <aside className="syncspace-sidebar">
         {activePanel === "explorer" && (
           <div className="sidebar-container">
             <div className="sidebar-title-bar">
               <div className="title-left">
-                <FaLayerGroup className="sidebar-icon" />
+                <FaLayerGroup />
                 <span>EXPLORER</span>
               </div>
               <div className="title-actions">
                 <button onClick={() => setShowFileModal(true)} title="New File"><FaFileMedical /></button>
                 <button onClick={() => setShowFolderModal(true)} title="New Folder"><FaFolderPlus /></button>
                 <button onClick={() => fileInputRef.current.click()} title="Import Files"><FaFileUpload /></button>
-                <button onClick={() => folderInputRef.current.click()} title="Import Local Directory"><FaFolderOpen /></button>
+                <button onClick={() => folderInputRef.current.click()} title="Open Local Directory"><FaFolderOpen /></button>
               </div>
             </div>
 
             <div className="sidebar-section">
               <div className="section-label">WORKSPACE STRUCTURE</div>
-              
-              <div className="file-tree">
-                {folders.map((folder) => (
-                  <div key={folder} className="folder-node">
-                    <div className="folder-row">
-                      <FaFolder className="folder-icon" />
-                      <span className="folder-name">{folder}</span>
-                    </div>
-                    <div className="folder-children">
-                      {files
-                        .filter((f) => f.folder === folder)
-                        .map((file) => (
-                          <div
-                            key={file.id}
-                            className={`file-row ${file.id === activeFileId ? "active" : ""}`}
-                            onClick={() => selectFile(file)}
-                          >
-                            <span className="file-row-main">
-                              <span className="file-ext-tag">{file.name.split(".").pop()}</span>
-                              <span className="file-row-name">{file.name}</span>
-                            </span>
-                            <button
-                              className="file-remove-btn"
-                              onClick={(e) => deleteFile(e, file.id)}
-                              title="Delete file"
-                            >
-                              <FaTimes />
-                            </button>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                ))}
-
-                <div className="root-files">
-                  {files
-                    .filter((f) => !f.folder)
-                    .map((file) => (
-                      <div
-                        key={file.id}
-                        className={`file-row ${file.id === activeFileId ? "active" : ""}`}
-                        onClick={() => selectFile(file)}
-                      >
-                        <span className="file-row-main">
-                          <span className="file-ext-tag">{file.name.split(".").pop()}</span>
-                          <span className="file-row-name">{file.name}</span>
-                        </span>
-                        <button
-                          className="file-remove-btn"
-                          onClick={(e) => deleteFile(e, file.id)}
-                          title="Delete file"
-                        >
-                          <FaTimes />
-                        </button>
-                      </div>
-                    ))}
-                </div>
+              <div className="vscode-tree-root">
+                <FolderTreeNode
+                  node={fileTreeRoot}
+                  activeFileId={activeFile?.id}
+                  onSelectFile={(id) => setActiveFileId(id)}
+                  onDeleteFile={deleteFile}
+                  onRunFile={handleRunFileClick}
+                  isRunning={isRunning}
+                />
               </div>
-            </div>
-          </div>
-        )}
-
-        {activePanel === "search" && (
-          <div className="sidebar-container">
-            <div className="sidebar-title-bar"><span>SEARCH</span></div>
-            <div className="sidebar-padding">
-              <input placeholder="Search keywords..." className="sidebar-input" />
             </div>
           </div>
         )}
@@ -624,68 +614,48 @@ sys.stdout = io.StringIO()
 
       {/* MAIN WORKSPACE */}
       <main className="syncspace-main">
-        {/* WORKSPACE TOOLBAR */}
         <header className="workspace-toolbar">
           <div className="tab-strip">
             {files.map((file) => (
               <div
                 key={file.id}
-                className={`tab-item ${file.id === activeFileId ? "active" : ""}`}
-                onClick={() => selectFile(file)}
+                className={`tab-item ${file.id === activeFile?.id ? "active" : ""}`}
+                onClick={() => setActiveFileId(file.id)}
               >
                 <FaRegFileCode className="tab-file-icon" />
                 <span className="tab-label">{file.name}</span>
+                <button
+                  className="tab-run-btn"
+                  onClick={(e) => handleRunFileClick(e, file)}
+                  disabled={isRunning}
+                  title={`Run ${file.name}`}
+                >
+                  <FaPlay size={9} />
+                </button>
                 {files.length > 1 && (
-                  <button className="tab-close" onClick={(e) => deleteFile(e, file.id)}>
-                    ×
-                  </button>
+                  <button className="tab-close" onClick={(e) => deleteFile(e, file.id)}>×</button>
                 )}
               </div>
             ))}
           </div>
 
           <div className="toolbar-controls">
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="toolbar-select"
-            >
-              <option value="javascript">JavaScript (.js)</option>
-              <option value="python">Python (.py)</option>
-              <option value="typescript">TypeScript (.ts)</option>
-              <option value="html">HTML (.html)</option>
-              <option value="css">CSS (.css)</option>
-              <option value="json">JSON (.json)</option>
-              <option value="cpp">C++ (.cpp)</option>
-              <option value="java">Java (.java)</option>
-            </select>
-
-            <button
-              className="btn-primary"
-              onClick={runCode}
-              disabled={isPyodideLoading}
-            >
-              <FaPlay /> {isPyodideLoading ? "Loading..." : "Run"}
+            <button className="btn-primary" onClick={() => runCodeOnBackend()} disabled={isRunning || !activeFile}>
+              <FaPlay /> {isRunning ? "Running..." : "Run Active"}
             </button>
-
-            <button
-              className="btn-secondary"
-              onClick={saveFileToCustomLocation}
-              title="Save to local device"
-            >
-              <FaDownload /> Save As
+            <button className="btn-secondary" onClick={exportCurrentFile} disabled={!activeFile} title="Export current file">
+              <FaDownload /> Export
             </button>
           </div>
         </header>
 
-        {/* WORKSPACE PANELS SPLIT */}
         <div className="editor-workspace-split">
           <div className="editor-pane">
             <MonacoEditor
               height="100%"
               theme="vs-dark"
-              language={language}
-              value={code}
+              language={activeFile ? activeFile.language : "plaintext"}
+              value={activeFile ? activeFile.content : ""}
               onChange={handleCodeChange}
               options={{
                 fontSize: 13.5,
@@ -694,8 +664,7 @@ sys.stdout = io.StringIO()
                 automaticLayout: true,
                 padding: { top: 12 },
                 smoothScrolling: true,
-                cursorBlinking: "smooth",
-                renderLineHighlight: "all"
+                cursorBlinking: "smooth"
               }}
             />
           </div>
@@ -704,50 +673,30 @@ sys.stdout = io.StringIO()
             <div className="panel-box">
               <div className="panel-box-header">
                 <span className="panel-box-title"><FaConsoleIcon /> CONSOLE OUTPUT</span>
-                <button className="panel-box-action" onClick={() => setOutput("")}>
-                  Clear
-                </button>
+                <button className="panel-box-action" onClick={() => setOutput("")}>Clear</button>
               </div>
               <div className="panel-box-content">
-                <pre>{output || "Output ready. Click 'Run' to execute."}</pre>
+                <pre>{output || "Click 'Run' on any file to execute code."}</pre>
               </div>
             </div>
 
             <div className="panel-box">
               <div className="panel-box-header">
-                <span className="panel-box-title"><FaTerminal /> TERMINAL</span>
-                <button
-                  className="panel-box-action"
-                  onClick={() => setTerminalOutput("Terminal Cleared.\n")}
-                >
+                <span className="panel-box-title"><FaTerminal /> EXECUTION HISTORY</span>
+                <button className="panel-box-action" onClick={() => setTerminalOutput("")}>
                   <FaTrash />
                 </button>
               </div>
               <div className="panel-box-content terminal-display">
                 <pre>{terminalOutput}</pre>
-                <div className="terminal-input-line">
-                  <FaChevronRight className="terminal-arrow" />
-                  <input
-                    ref={terminalRef}
-                    value={command}
-                    placeholder="Type CLI response here..."
-                    onChange={(e) => setCommand(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleTerminalSubmit();
-                    }}
-                    className="terminal-field"
-                  />
-                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* STATUS FOOTER */}
         <footer className="workspace-footer">
-          <div className="footer-item"><FaShieldAlt /> System Active</div>
-          <div className="footer-item">UTF-8</div>
-          <div className="footer-item highlight">{language.toUpperCase()}</div>
+          <div className="footer-item"><FaShieldAlt /> Backend ({API_URL})</div>
+          <div className="footer-item highlight">{activeFile?.language ? activeFile.language.toUpperCase() : "PLAINTEXT"}</div>
           <div className="footer-item status-text">{status}</div>
         </footer>
       </main>
@@ -759,7 +708,7 @@ sys.stdout = io.StringIO()
             <h3>Create Folder</h3>
             <input
               type="text"
-              placeholder="Folder Name (e.g., utils)"
+              placeholder="Folder Name (e.g. src)"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               className="modal-input"
@@ -779,7 +728,7 @@ sys.stdout = io.StringIO()
             <h3>Create File</h3>
             <input
               type="text"
-              placeholder="File Name (e.g., app.py, script.js)"
+              placeholder="File Name (e.g. App.java, test.py)"
               value={newFileName}
               onChange={(e) => setNewFileName(e.target.value)}
               className="modal-input"

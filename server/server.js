@@ -6,6 +6,7 @@ import { Server } from "socket.io";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 
 import connectDB from "./config/db.js";
@@ -13,7 +14,6 @@ import connectDB from "./config/db.js";
 // ======================================
 // Routes
 // ======================================
-
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import roomRoutes from "./routes/roomRoutes.js";
@@ -30,140 +30,107 @@ import activityRoutes from "./routes/activityRoutes.js";
 // ======================================
 // Socket
 // ======================================
-
 import socketHandler from "./socket/socketHandler.js";
 
 // ======================================
 // Middleware
 // ======================================
-
 import notFound from "./middleware/notFound.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 // ======================================
 // Environment Variables
 // ======================================
-
 dotenv.config();
 
 // ======================================
-// Database Connection
+// Path Configuration & Setup
 // ======================================
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-connectDB();
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 // ======================================
-// Express App
+// Dynamic CORS Origin Evaluator
 // ======================================
+const allowedOrigins = (
+  process.env.CLIENT_URL ||
+  process.env.CLIENT_ORIGIN ||
+  "http://localhost:5173,http://localhost:3000"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
+const isOriginAllowed = (origin, callback) => {
+  // Allow requests with no origin (like mobile apps, curl, server-to-server)
+  if (!origin) return callback(null, true);
+  
+  if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production") {
+    return callback(null, true);
+  }
+  
+  return callback(new Error(`CORS Policy: Origin ${origin} not allowed.`));
+};
+
+// ======================================
+// Express App & Server Initialization
+// ======================================
 const app = express();
-
-// ======================================
-// HTTP Server
-// ======================================
-
 const server = http.createServer(app);
 
 // ======================================
 // Socket.IO Configuration
 // ======================================
-
 const io = new Server(server, {
   cors: {
-    origin:
-      process.env.CLIENT_URL ||
-      process.env.CLIENT_ORIGIN ||
-      "http://localhost:5173",
-
-    methods: ["GET", "POST"],
-
+    origin: (origin, callback) => isOriginAllowed(origin, callback),
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true,
   },
-
   transports: ["websocket", "polling"],
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
-// ======================================
-// Path Configuration
-// ======================================
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 /*
 ==========================================================
-SECURITY MIDDLEWARE
+SECURITY & UTILITY MIDDLEWARE
 ==========================================================
 */
-
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
+    contentSecurityPolicy: false, // Prevents issues with inline canvas/media rendering
   })
 );
-
-/*
-==========================================================
-LOGGER
-==========================================================
-*/
 
 if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
 }
 
-/*
-==========================================================
-CORS
-==========================================================
-*/
-
 app.use(
   cors({
-    origin:
-      process.env.CLIENT_URL ||
-      process.env.CLIENT_ORIGIN ||
-      "http://localhost:5173",
-
+    origin: (origin, callback) => isOriginAllowed(origin, callback),
     credentials: true,
   })
 );
 
-/*
-==========================================================
-BODY PARSER
-==========================================================
-*/
-
-app.use(
-  express.json({
-    limit: "50mb",
-  })
-);
-
-app.use(
-  express.urlencoded({
-    extended: true,
-    limit: "50mb",
-  })
-);
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 /*
 ==========================================================
-STATIC FILES
+STATIC FILES & CONTEXT INJECTION
 ==========================================================
 */
+app.use("/uploads", express.static(uploadsDir));
 
-app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "uploads"))
-);
-
-/*
-==========================================================
-SOCKET.IO ACCESS IN CONTROLLERS
-==========================================================
-*/
-
+// Attach socket context to controllers
 app.use((req, res, next) => {
   req.io = io;
   next();
@@ -171,216 +138,143 @@ app.use((req, res, next) => {
 
 /*
 ==========================================================
-HOME ROUTE
+BASE & HEALTH ROUTES
 ==========================================================
 */
-
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "🚀 SyncSpace Backend Running",
+    message: "🚀 SyncSpace Backend Engine Running",
     version: "1.0.0",
+    timestamp: new Date().toISOString(),
   });
 });
-
-/*
-==========================================================
-HEALTH CHECK
-==========================================================
-*/
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     success: true,
     status: "Healthy",
     message: "SyncSpace Server Running Successfully",
-    timestamp: new Date(),
-    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    uptime: `${Math.floor(process.uptime())}s`,
   });
 });
+
 /*
 ==========================================================
 API ROUTES
 ==========================================================
 */
-
-// Authentication
-app.use(
-  "/api/auth",
-  authRoutes
-);
-
-// Users
-app.use(
-  "/api/users",
-  userRoutes
-);
-
-// Rooms
-app.use(
-  "/api/rooms",
-  roomRoutes
-);
-
-// Chat
-app.use(
-  "/api/chat",
-  chatRoutes
-);
-
-// Collaborative Editor
-app.use(
-  "/api/editor",
-  editorRoutes
-);
-
-// Files
-app.use(
-  "/api/files",
-  fileRoutes
-);
-
-// Folders
-app.use(
-  "/api/folders",
-  folderRoutes
-);
-
-// Code Runner
-app.use(
-  "/api/run",
-  runRoutes
-);
-
-// Terminal
-app.use(
-  "/api/terminal",
-  terminalRoutes
-);
-
-// Settings
-app.use(
-  "/api/settings",
-  settingsRoutes
-);
-
-// Uploads
-app.use(
-  "/api/upload",
-  uploadRoutes
-);
-
-// Activity (Git / Notifications)
-app.use(
-  "/api/activity",
-  activityRoutes
-);
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/rooms", roomRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/editor", editorRoutes);
+app.use("/api/files", fileRoutes);
+app.use("/api/folders", folderRoutes);
+app.use("/api/run", runRoutes);
+app.use("/api/terminal", terminalRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/upload", uploadRoutes);
+app.use("/api/activity", activityRoutes);
 
 /*
 ==========================================================
-SOCKET.IO HANDLER
+SOCKET.IO HANDLER INITIALIZATION
 ==========================================================
 */
-
 socketHandler(io);
 
 /*
 ==========================================================
-404 HANDLER
+ERROR HANDLING MIDDLEWARE
 ==========================================================
 */
-
 app.use(notFound);
-
-/*
-==========================================================
-ERROR HANDLER
-==========================================================
-*/
-
 app.use(errorHandler);
+
 /*
 ==========================================================
-SERVER CONFIGURATION
+SERVER BOOTSTRAP WITH DB VERIFICATION
 ==========================================================
 */
-
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-  console.clear();
+const startServer = async () => {
+  try {
+    // Ensure DB connection is established before listening
+    await connectDB();
 
-  console.log(`
+    server.listen(PORT, () => {
+      if (process.env.NODE_ENV !== "production") {
+        console.clear();
+      }
+
+      console.log(`
 ==========================================================
 🚀 SyncSpace Backend Server Started Successfully
 ==========================================================
 
 🌐 Server URL        : http://localhost:${PORT}
 📡 API Health        : http://localhost:${PORT}/api/health
+⚡ Environment       : ${process.env.NODE_ENV || "development"}
 
-🛢 Database          : MongoDB Connected
-⚡ Socket.IO         : Enabled
-🔐 Authentication    : Enabled
-👤 Users             : Enabled
-🏠 Rooms             : Enabled
-💬 Chat              : Enabled
-📝 Collaborative IDE : Enabled
-📁 File Explorer     : Enabled
-📂 Folder Manager    : Enabled
-▶ Code Runner        : Enabled
-⌨ Terminal           : Enabled
-⚙ Settings          : Enabled
-📤 File Upload       : Enabled
-📊 Activity API      : Enabled
+🛢 Database          : Connected
+⚡ Socket.IO         : Enabled & Bound
+🔐 Authentication    : Mounted (/api/auth)
+👤 Users             : Mounted (/api/users)
+🏠 Rooms             : Mounted (/api/rooms)
+💬 Chat              : Mounted (/api/chat)
+📝 Collaborative IDE : Mounted (/api/editor)
+📁 File Explorer     : Mounted (/api/files)
+📂 Folder Manager    : Mounted (/api/folders)
+▶ Code Runner        : Mounted (/api/run)
+⌨ Terminal          : Mounted (/api/terminal)
+⚙ Settings          : Mounted (/api/settings)
+📤 File Upload       : Mounted (/api/upload)
+📊 Activity API      : Mounted (/api/activity)
 
 ==========================================================
  Ready to accept connections...
 ==========================================================
 `);
-});
+    });
+  } catch (error) {
+    console.error("❌ Failed to initialize database connection:", error.message);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 /*
 ==========================================================
-GRACEFUL SHUTDOWN
+GRACEFUL SHUTDOWN & UNCAUGHT ERROR HANDLING
 ==========================================================
 */
-
-process.on("SIGINT", () => {
-  console.log("\n🛑 Shutting down SyncSpace Server...");
+const shutdown = (signal) => {
+  console.log(`\n🛑 ${signal} received. Closing SyncSpace HTTP server...`);
   server.close(() => {
-    console.log("✅ HTTP Server Closed");
+    console.log("✅ HTTP and Socket.IO server closed successfully.");
     process.exit(0);
   });
-});
 
-process.on("SIGTERM", () => {
-  console.log("\n🛑 SIGTERM Received...");
-  server.close(() => {
-    console.log("✅ Server Stopped");
-    process.exit(0);
-  });
-});
+  // Force shutdown if connections do not drain within 10s
+  setTimeout(() => {
+    console.error("⚠️ Forced shutdown due to lingering connections.");
+    process.exit(1);
+  }, 10000);
+};
 
-/*
-==========================================================
-UNCAUGHT ERROR HANDLING
-==========================================================
-*/
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
 
 process.on("uncaughtException", (err) => {
-  console.error("❌ Uncaught Exception");
-  console.error(err);
+  console.error("❌ Uncaught Exception:", err);
 });
 
-process.on("unhandledRejection", (err) => {
-  console.error("❌ Unhandled Promise Rejection");
-  console.error(err);
+process.on("unhandledRejection", (reason) => {
+  console.error("❌ Unhandled Promise Rejection:", reason);
 });
-
-/*
-==========================================================
-EXPORTS
-==========================================================
-*/
 
 export default app;
