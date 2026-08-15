@@ -285,29 +285,55 @@ export default function RoomWorkspace() {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    files.forEach((file, index) => {
-      let sizeStr = `${(file.size / 1024).toFixed(1)} KB`;
-      if (file.size > 1024 * 1024) {
-        sizeStr = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-      }
+    files.forEach((file) => {
 
-      const isCode = file.name.match(/\.(js|jsx|ts|tsx|py|java|html|css|sql|json)$/i);
+      const reader = new FileReader();
 
-      const fileData = {
-        id: `file-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
-        name: file.name,
-        size: sizeStr,
-        sender: username || "You",
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        type: isCode ? "code" : "text",
+      reader.onload = () => {
+
+        const fileData = {
+          id: `file-${Date.now()}`,
+          name: file.name,
+          size: `${(file.size / 1024).toFixed(1)} KB`,
+          sender: username,
+          time: new Date().toLocaleTimeString(),
+          type: file.name.match(/\.(js|jsx|py|java|html|css)$/i)
+            ? "code"
+            : "text",
+
+          fileData: reader.result
+        };
+
+
+        socketRef.current.emit("share-file", {
+          roomId,
+          fileData
+        });
+
       };
 
-      if (socketRef.current) {
-        socketRef.current.emit("share-file", { roomId, fileData });
-      }
+      reader.readAsDataURL(file);
+
     });
 
-    showToast(`Shared ${files.length} file(s) with room`);
+
+    showToast("File shared successfully");
+  };
+
+  const handleDownload = (file) => {
+
+    const link = document.createElement("a");
+
+    link.href = file.fileData;
+
+    link.download = file.name;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
   };
 
   return (
@@ -612,8 +638,12 @@ export default function RoomWorkspace() {
                         <span className="file-name">{file.name}</span>
                         <span className="file-meta">{file.size} • {file.sender}</span>
                       </div>
-                      <button className="download-btn">
-                        <Download size={15} />
+                      <button
+                        className="download-btn"
+                        onClick={() => handleDownload(file)}
+                        title="Download file"
+                      >
+                        <Download size={16}/>
                       </button>
                     </div>
                   ))}

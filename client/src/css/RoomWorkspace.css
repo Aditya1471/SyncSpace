@@ -982,19 +982,25 @@ opacity:.3;
     font-size:13px;
 }
 
-.download-btn{
-    width:42px;
-    height:42px;
-    border:none;
-    border-radius:12px;
-    cursor:pointer;
-    background:#1e293b;
-    color:white;
-    transition:.3s;
+.download-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: #1e293b;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.download-btn:hover{
-    background:#2563eb;
+
+.download-btn:hover {
+  background: #2563eb;
+  color: white;
+  transform: translateY(-2px);
 }
 
 /* ===========================
