@@ -7,7 +7,10 @@ export default function RoomLanding() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [activeTab, setActiveTab] = useState("create"); // 'create' | 'join'
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("tab") || "create";
+  });
 
   // Form State
   const [roomName, setRoomName] = useState("");

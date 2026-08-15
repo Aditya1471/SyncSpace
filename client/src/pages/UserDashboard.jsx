@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../css/Userdashboard.css";
 
@@ -159,6 +159,10 @@ function SettingsView() {
 export default function UserDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [showAllRooms, setShowAllRooms] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  
   const [toastMsg, setToastMsg] = useState("");
   useEffect(() => {
     const msg = localStorage.getItem("loginSuccess");
@@ -184,6 +188,15 @@ export default function UserDashboard() {
     username.split('.')[0].split('_')[0].charAt(0).toUpperCase() + 
     username.split('.')[0].split('_')[0].slice(1)
   );
+
+
+
+
+  // ADD HERE
+  const handleSearchChange = (e) => {
+  setSearchQuery(e.target.value);
+};
+
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -378,8 +391,9 @@ export default function UserDashboard() {
             <input
               type="text"
               placeholder="Search rooms..."
+              value={searchQuery}
+              onChange={handleSearchChange}
             />
-
           </div>
 
           <div className="topbar-right">
@@ -451,7 +465,7 @@ export default function UserDashboard() {
 
             <div className="hero-buttons">
 
-              <Link to="/rooms">
+              <Link to="/rooms?tab=create">
 
                 <button className="primary-btn">
 
@@ -463,7 +477,7 @@ export default function UserDashboard() {
 
               </Link>
 
-              <Link to="/rooms">
+              <Link to="/rooms?tab=join">
 
                 <button className="secondary-btn">
 
@@ -550,7 +564,10 @@ export default function UserDashboard() {
         {/* Workspace Section */}
         {/* ================================= */}
 
-       <section className="workspace-section">
+       <section
+          id="recent-rooms"
+          className="workspace-section"
+        >
 
   <div className="section-header">
 
@@ -562,16 +579,27 @@ export default function UserDashboard() {
       </p>
     </div>
 
-    <div className="view-all-btn">
-      View All
-      <FaArrowRight />
-    </div>
+    <div
+    className="view-all-btn"
+    onClick={() => setShowAllRooms(!showAllRooms)}
+    style={{ cursor: "pointer" }}
+  >
+    {showAllRooms ? "View Less" : "View All"}
+    <FaArrowRight />
+  </div>
 
   </div>
 
   <div className="rooms-grid">
 
-    {recentRooms.map((room) => (
+    {recentRooms
+    .filter((room) =>
+      room.room
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase())
+    )
+    .slice(0, showAllRooms ? recentRooms.length : 4)
+    .map((room) => (
 
       <div
         className="room-card"
@@ -614,11 +642,12 @@ export default function UserDashboard() {
         </div>
 
         <button
-          className="enter-room"
-        >
-          Enter Room
-          <FaArrowRight />
-        </button>
+        className="enter-room"
+        onClick={() => navigate(`/workspace/${room.id}`)}
+      >
+        Enter Room
+        <FaArrowRight />
+      </button>
 
       </div>
 

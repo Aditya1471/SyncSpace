@@ -440,6 +440,12 @@ export default function RoomWorkspace() {
         <header className="workspace-header">
           <div className="nav-tabs">
             <button
+              onClick={() => navigate("/dashboard")}
+              className="nav-btn"
+            >
+              🏠 Home
+            </button>
+            <button
               onClick={() => setActiveTab("editor")}
               className={`nav-btn ${activeTab === "editor" ? "active" : ""}`}
             >
