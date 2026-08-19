@@ -26,6 +26,15 @@ function Login() {
 
   const navigate = useNavigate();
 
+  const [toastMsg, setToastMsg] = useState("");
+
+  const showToast = (msg) => {
+    setToastMsg(msg);
+
+    setTimeout(() => {
+      setToastMsg("");
+    }, 3000);
+  };
 
   const [loading,setLoading] = useState(false);
 
@@ -234,12 +243,16 @@ function Login() {
 
 
 
-      alert(
+      showToast(
         response.data.message ||
-        "Login successful"
+        "Logged in successfully"
       );
 
 
+      localStorage.setItem(
+        "loginSuccess",
+        "Logged in successfully"
+      );
 
       navigate(
         "/dashboard"
@@ -715,7 +728,11 @@ Create Account
 
 </div>
 
-
+{toastMsg && (
+  <div className="toast">
+    {toastMsg}
+  </div>
+)}
 </div>
 
 );

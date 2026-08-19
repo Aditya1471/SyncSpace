@@ -177,6 +177,8 @@ transform:translateY(0px);
     font-size:15px;
     font-weight:700;
     transition:.35s;
+    position:relative;
+    overflow:hidden;
 }
 
 .toggle-btn:hover{
@@ -454,10 +456,6 @@ transform:translateY(0);
     filter:brightness(1.05);
 }
 
-.toggle-btn.active{
-    position:relative;
-    overflow:hidden;
-}
 
 .toggle-btn.active::after{
     content:"";

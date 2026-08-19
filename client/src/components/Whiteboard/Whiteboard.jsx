@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Stage, Layer, Line, Rect, Ellipse, Arrow, Transformer } from "react-konva";
+import { Stage, Layer, Line, Rect, Ellipse, Arrow, Transformer, Text } from "react-konva";
 import Toolbar from "./Toolbar";
 import "./Whiteboard.css";
 
@@ -149,6 +149,9 @@ const elementIntersectsPoint = (p, element) => {
 function Whiteboard({ socket, roomId }) {
   // Elements state
   const [lines, setLines] = useState([]);
+  const [texts, setTexts] = useState([]);
+  const [editingTextId, setEditingTextId] = useState(null);
+  const [tempTextValue, setTempTextValue] = useState("");
   const isIncomingUpdate = useRef(false);
 
   // Listen for remote draw updates
@@ -157,17 +160,40 @@ function Whiteboard({ socket, roomId }) {
 
     socket.on("canvas-draw", (data) => {
       isIncomingUpdate.current = true;
-      setLines(data);
+      if (data && typeof data === "object" && !Array.isArray(data)) {
+        setLines(data.lines || []);
+        setTexts(data.texts || []);
+      } else {
+        setLines(data || []);
+        setTexts([]);
+      }
     });
 
     socket.on("canvas-clear", () => {
       isIncomingUpdate.current = true;
       setLines([]);
+      setTexts([]);
     });
+
+    socket.on(
+      "whiteboard-user-drawing",
+      (data) => {
+        setRemoteCursor(data);
+      }
+    );
+
+    socket.on(
+      "whiteboard-cursor-update",
+      (data) => {
+        setRemoteCursor(data);
+      }
+    );
 
     return () => {
       socket.off("canvas-draw");
       socket.off("canvas-clear");
+      socket.off("whiteboard-user-drawing");
+      socket.off("whiteboard-cursor-update");
     };
   }, [socket]);
 
@@ -180,8 +206,8 @@ function Whiteboard({ socket, roomId }) {
       return;
     }
 
-    socket.emit("canvas-draw", { roomId, drawData: lines });
-  }, [lines, socket, roomId]);
+    socket.emit("canvas-draw", { roomId, drawData: { lines, texts } });
+  }, [lines, texts, socket, roomId]);
   
   // Selection state
   const [selectedId, setSelectedId] = useState(null);
@@ -202,6 +228,8 @@ function Whiteboard({ socket, roomId }) {
 
   // Theme state: defaults to dark
   const [theme, setTheme] = useState("dark");
+  const [drawingUser, setDrawingUser] = useState("");
+  const [remoteCursor, setRemoteCursor] = useState(null);
 
   // Active Tool and Style states
   const [selectedTool, setSelectedTool] = useState("pencil");
@@ -301,10 +329,10 @@ function Whiteboard({ socket, roomId }) {
 
   // Sync selectedId clean-up if selection gets deleted
   useEffect(() => {
-    if (selectedId && !lines.some((l) => l.id === selectedId)) {
+    if (selectedId && !lines.some((l) => l.id === selectedId) && !texts.some((t) => t.id === selectedId)) {
       setSelectedId(null);
     }
-  }, [lines, selectedId]);
+  }, [lines, texts, selectedId]);
 
   // Helper function to resolve relative mouse coordinates accounting for panning
   const getRelativePointerPosition = (stage) => {
@@ -322,7 +350,7 @@ function Whiteboard({ socket, roomId }) {
 
     // Push initial lines state to history exactly once per drag session
     if (!hasErasedThisSession.current) {
-      setUndoStack((prev) => [...prev, [...lines]]);
+      setUndoStack((prev) => [...prev, { lines, texts }]);
       setRedoStack([]); // Clear redo
       hasErasedThisSession.current = true;
     }
@@ -336,6 +364,19 @@ function Whiteboard({ socket, roomId }) {
   const handleMouseDown = (e) => {
     const stage = e.target.getStage();
     const relativePos = getRelativePointerPosition(stage);
+    if (socket && roomId) {
+      socket.emit("whiteboard-cursor", {
+        roomId,
+        x: relativePos.x,
+        y: relativePos.y
+      });
+    }
+
+    // Click off to deselect/blur currently editing text
+    if (editingTextId) {
+      handleTextEditComplete();
+      return;
+    }
 
     // Eraser Mode logic
     if (selectedTool === "eraser") {
@@ -356,10 +397,41 @@ function Whiteboard({ socket, roomId }) {
       return;
     }
 
+    // Text tool logic
+    if (selectedTool === "text") {
+      if (e.target !== stage) {
+        return;
+      }
+
+      setUndoStack((prev) => [...prev, { lines, texts }]);
+      setRedoStack([]);
+
+      const textColor = theme === "dark" ? "#ffffff" : "#000000";
+
+      const newText = {
+        id: `text-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        x: relativePos.x,
+        y: relativePos.y,
+        text: "Enter text",
+        fontSize: strokeWidth * 4 + 12,
+        color: textColor,
+      };
+
+      setTexts((prevTexts) => [...prevTexts, newText]);
+      setSelectedId(newText.id);
+
+      // Auto-enter edit mode
+      setTimeout(() => {
+        setEditingTextId(newText.id);
+        setTempTextValue("Enter text");
+      }, 50);
+      return;
+    }
+
     // Shape drawing Mode logic
     if (selectedTool === "shape") {
       isDrawing.current = true;
-      setUndoStack((prev) => [...prev, [...lines]]);
+      setUndoStack((prev) => [...prev, { lines, texts }]);
       setRedoStack([]); // Clear redo
 
       const isClosed = ["rectangle", "circle", "diamond", "triangle", "hexagon", "star"].includes(selectedShape);
@@ -383,9 +455,13 @@ function Whiteboard({ socket, roomId }) {
     }
 
     isDrawing.current = true;
-
+    if (socket && roomId) {
+      socket.emit("whiteboard-user-drawing", {
+        roomId
+      });
+    }
     // Save previous state to undo stack before drawing
-    setUndoStack((prev) => [...prev, [...lines]]);
+    setUndoStack((prev) => [...prev, { lines, texts }]);
     setRedoStack([]); // Clear redo
 
     const newLine = {
@@ -477,6 +553,36 @@ function Whiteboard({ socket, roomId }) {
     }
   };
 
+  // Text Edit Complete Callback
+  const handleTextEditComplete = () => {
+    if (!editingTextId) return;
+
+    const trimmedValue = tempTextValue.trim();
+    if (trimmedValue === "") {
+      // If blank, remove it
+      setTexts((prevTexts) => prevTexts.filter((txt) => txt.id !== editingTextId));
+      if (selectedId === editingTextId) {
+        setSelectedId(null);
+      }
+    } else {
+      setUndoStack((prev) => [...prev, { lines, texts }]);
+      setRedoStack([]);
+      setTexts((prevTexts) =>
+        prevTexts.map((txt) => {
+          if (txt.id === editingTextId) {
+            return {
+              ...txt,
+              text: trimmedValue,
+            };
+          }
+          return txt;
+        })
+      );
+    }
+    setEditingTextId(null);
+    setTempTextValue("");
+  };
+
   // Theme Toggler
   const handleToggleTheme = () => {
     setTheme((prev) => {
@@ -490,6 +596,18 @@ function Whiteboard({ socket, roomId }) {
         setStrokeColor("#1e293b");
       }
 
+      // Automatically update text colors to maintain contrast
+      setTexts((prevTexts) =>
+        prevTexts.map((txt) => {
+          if (nextTheme === "dark" && (txt.color === "#000000" || txt.color === "#1e293b")) {
+            return { ...txt, color: "#ffffff" };
+          } else if (nextTheme === "light" && (txt.color === "#ffffff" || txt.color === "#f8fafc")) {
+            return { ...txt, color: "#1e293b" };
+          }
+          return txt;
+        })
+      );
+
       return nextTheme;
     });
   };
@@ -499,8 +617,15 @@ function Whiteboard({ socket, roomId }) {
     if (undoStack.length === 0) return;
     const previous = undoStack[undoStack.length - 1];
     setUndoStack((prev) => prev.slice(0, -1));
-    setRedoStack((prev) => [...prev, [...lines]]);
-    setLines(previous);
+    setRedoStack((prev) => [...prev, { lines, texts }]);
+
+    if (Array.isArray(previous)) {
+      setLines(previous);
+      setTexts([]);
+    } else {
+      setLines(previous.lines || []);
+      setTexts(previous.texts || []);
+    }
   };
 
   // Redo Action
@@ -508,27 +633,73 @@ function Whiteboard({ socket, roomId }) {
     if (redoStack.length === 0) return;
     const next = redoStack[redoStack.length - 1];
     setRedoStack((prev) => prev.slice(0, -1));
-    setUndoStack((prev) => [...prev, [...lines]]);
-    setLines(next);
+    setUndoStack((prev) => [...prev, { lines, texts }]);
+
+    if (Array.isArray(next)) {
+      setLines(next);
+      setTexts([]);
+    } else {
+      setLines(next.lines || []);
+      setTexts(next.texts || []);
+    }
   };
 
   // Clear Canvas Action
   const handleClearCanvas = () => {
-    if (lines.length > 0) {
-      setUndoStack((prev) => [...prev, [...lines]]);
+    if (lines.length > 0 || texts.length > 0) {
+      setUndoStack((prev) => [...prev, { lines, texts }]);
       setRedoStack([]);
       setLines([]);
+      setTexts([]);
     }
   };
 
   // Delete Selection Action
   const handleDelete = useCallback(() => {
     if (!selectedId) return;
-    setUndoStack((prev) => [...prev, [...lines]]);
+    setUndoStack((prev) => [...prev, { lines, texts }]);
     setRedoStack([]);
     setLines((prev) => prev.filter((line) => line.id !== selectedId));
+    setTexts((prev) => prev.filter((txt) => txt.id !== selectedId));
     setSelectedId(null);
-  }, [selectedId, lines]);
+  }, [selectedId, lines, texts]);
+
+  // Style Selection Handlers
+  const handleStrokeColorChange = (color) => {
+    setStrokeColor(color);
+    if (selectedId && (selectedTool === "select" || selectedTool === "text")) {
+      setUndoStack((prev) => [...prev, { lines, texts }]);
+      setRedoStack([]);
+      setLines((prev) =>
+        prev.map((l) => (l.id === selectedId ? { ...l, stroke: color } : l))
+      );
+      setTexts((prev) =>
+        prev.map((t) => (t.id === selectedId ? { ...t, color: color } : t))
+      );
+    }
+  };
+
+  const handleFillColorChange = (color) => {
+    setFillColor(color);
+    if (selectedId && (selectedTool === "select" || selectedTool === "text")) {
+      setUndoStack((prev) => [...prev, { lines, texts }]);
+      setRedoStack([]);
+      setLines((prev) =>
+        prev.map((l) => (l.id === selectedId ? { ...l, fill: color } : l))
+      );
+    }
+  };
+
+  const handleStrokeWidthChange = (width) => {
+    setStrokeWidth(width);
+    if (selectedId && (selectedTool === "select" || selectedTool === "text")) {
+      setUndoStack((prev) => [...prev, { lines, texts }]);
+      setRedoStack([]);
+      setLines((prev) =>
+        prev.map((l) => (l.id === selectedId ? { ...l, strokeWidth: width } : l))
+      );
+    }
+  };
 
   // Fullscreen Toggle Action
   const handleToggleFullscreen = useCallback(() => {
@@ -570,7 +741,7 @@ function Whiteboard({ socket, roomId }) {
   // Selection Dragging Handlers
   const handleDragStart = (e) => {
     e.cancelBubble = true;
-    setUndoStack((prev) => [...prev, [...lines]]);
+    setUndoStack((prev) => [...prev, { lines, texts }]);
     setRedoStack([]);
   };
 
@@ -579,31 +750,47 @@ function Whiteboard({ socket, roomId }) {
     const node = e.target;
     const id = node.id();
     
-    setLines((prevLines) =>
-      prevLines.map((line) => {
-        if (line.id === id) {
-          if (line.type === "circle") {
+    const isText = texts.some((t) => t.id === id);
+    if (isText) {
+      setTexts((prevTexts) =>
+        prevTexts.map((txt) => {
+          if (txt.id === id) {
             return {
-              ...line,
-              x: node.x() - line.width / 2,
-              y: node.y() - line.height / 2,
-            };
-          } else {
-            return {
-              ...line,
+              ...txt,
               x: node.x(),
               y: node.y(),
             };
           }
-        }
-        return line;
-      })
-    );
+          return txt;
+        })
+      );
+    } else {
+      setLines((prevLines) =>
+        prevLines.map((line) => {
+          if (line.id === id) {
+            if (line.type === "circle") {
+              return {
+                ...line,
+                x: node.x() - line.width / 2,
+                y: node.y() - line.height / 2,
+              };
+            } else {
+              return {
+                ...line,
+                x: node.x(),
+                y: node.y(),
+              };
+            }
+          }
+          return line;
+        })
+      );
+    }
   };
 
   // Selection Resizing Handlers
   const handleTransformStart = () => {
-    setUndoStack((prev) => [...prev, [...lines]]);
+    setUndoStack((prev) => [...prev, { lines, texts }]);
     setRedoStack([]);
   };
 
@@ -615,34 +802,52 @@ function Whiteboard({ socket, roomId }) {
     node.scaleX(1);
     node.scaleY(1);
 
-    setLines((prevLines) =>
-      prevLines.map((line) => {
-        if (line.id === selectedId) {
-          const type = line.type;
-          
-          if (type === "circle") {
-            const newWidth = node.width() * scaleX;
-            const newHeight = node.height() * scaleY;
+    const isText = texts.some((t) => t.id === selectedId);
+    if (isText) {
+      setTexts((prevTexts) =>
+        prevTexts.map((txt) => {
+          if (txt.id === selectedId) {
+            const newFontSize = Math.round(txt.fontSize * scaleY);
             return {
-              ...line,
-              x: node.x() - newWidth / 2,
-              y: node.y() - newHeight / 2,
-              width: newWidth,
-              height: newHeight,
-            };
-          } else {
-            return {
-              ...line,
+              ...txt,
               x: node.x(),
               y: node.y(),
-              width: (line.width || 0) * scaleX,
-              height: (line.height || 0) * scaleY,
+              fontSize: newFontSize > 8 ? newFontSize : 8,
             };
           }
-        }
-        return line;
-      })
-    );
+          return txt;
+        })
+      );
+    } else {
+      setLines((prevLines) =>
+        prevLines.map((line) => {
+          if (line.id === selectedId) {
+            const type = line.type;
+            
+            if (type === "circle") {
+              const newWidth = node.width() * scaleX;
+              const newHeight = node.height() * scaleY;
+              return {
+                ...line,
+                x: node.x() - newWidth / 2,
+                y: node.y() - newHeight / 2,
+                width: newWidth,
+                height: newHeight,
+              };
+            } else {
+              return {
+                ...line,
+                x: node.x(),
+                y: node.y(),
+                width: (line.width || 0) * scaleX,
+                height: (line.height || 0) * scaleY,
+              };
+            }
+          }
+          return line;
+        })
+      );
+    }
   };
 
   // Key Down Listener for keyboard delete shortcut
@@ -663,7 +868,7 @@ function Whiteboard({ socket, roomId }) {
   useEffect(() => {
     if (!transformerRef.current) return;
 
-    if (selectedId && selectedTool === "select") {
+    if (selectedId && (selectedTool === "select" || selectedTool === "text")) {
       const stage = stageRef.current;
       if (stage) {
         const selectedNode = stage.findOne("#" + selectedId);
@@ -677,7 +882,7 @@ function Whiteboard({ socket, roomId }) {
     } else {
       transformerRef.current.nodes([]);
     }
-  }, [selectedId, selectedTool, lines]);
+  }, [selectedId, selectedTool, lines, texts]);
 
   // Render element helper maps line array entries to corresponding Konva nodes
   const renderElement = (element) => {
@@ -869,17 +1074,50 @@ function Whiteboard({ socket, roomId }) {
 
   return (
     <div ref={whiteboardRef} className={`whiteboard-container theme-${theme}`}>
+      {drawingUser && (
+        <div
+          style={{
+            position: "absolute",
+            top: "20px",
+            right: "20px",
+            background: "#111827",
+            color: "#ffffff",
+            padding: "8px 14px",
+            borderRadius: "8px",
+            zIndex: 1000,
+            fontSize: "14px",
+          }}
+        >
+          ✏️ {drawingUser}
+        </div>
+      )} 
+      {remoteCursor && (
+        <div
+          style={{
+            position: "absolute",
+            left: remoteCursor.x,
+            top: remoteCursor.y,
+            zIndex: 2000,
+            pointerEvents: "none",
+            color: "#38bdf8",
+            fontWeight: "bold",
+            fontSize: "14px",
+          }}
+        >
+          ✏️ {remoteCursor.username}
+        </div>
+      )}
       <Toolbar
         selectedTool={selectedTool}
         setSelectedTool={setSelectedTool}
         selectedShape={selectedShape}
         setSelectedShape={setSelectedShape}
         strokeColor={strokeColor}
-        setStrokeColor={setStrokeColor}
+        setStrokeColor={handleStrokeColorChange}
         fillColor={fillColor}
-        setFillColor={setFillColor}
+        setFillColor={handleFillColorChange}
         strokeWidth={strokeWidth}
-        setStrokeWidth={setStrokeWidth}
+        setStrokeWidth={handleStrokeWidthChange}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onClearCanvas={handleClearCanvas}
@@ -922,7 +1160,49 @@ function Whiteboard({ socket, roomId }) {
         >
           <Layer>
             {lines.map((line) => renderElement(line))}
-            {selectedTool === "select" && selectedId && (
+            {texts.map((txt) => {
+              const displayColor = getAdaptiveColor(txt.color, theme);
+              return (
+                <Text
+                  key={txt.id}
+                  id={txt.id}
+                  x={txt.x}
+                  y={txt.y}
+                  text={txt.text}
+                  fontSize={txt.fontSize}
+                  fill={displayColor}
+                  fontFamily="sans-serif"
+                  fontStyle="normal"
+                  visible={editingTextId !== txt.id}
+                  draggable={selectedTool === "select" || selectedTool === "text"}
+                  onClick={(e) => {
+                    if (selectedTool === "select" || selectedTool === "text") {
+                      e.cancelBubble = true;
+                      setSelectedId(txt.id);
+                    }
+                  }}
+                  onTap={(e) => {
+                    if (selectedTool === "select" || selectedTool === "text") {
+                      e.cancelBubble = true;
+                      setSelectedId(txt.id);
+                    }
+                  }}
+                  onDblClick={(e) => {
+                    e.cancelBubble = true;
+                    setEditingTextId(txt.id);
+                    setTempTextValue(txt.text);
+                  }}
+                  onDblTap={(e) => {
+                    e.cancelBubble = true;
+                    setEditingTextId(txt.id);
+                    setTempTextValue(txt.text);
+                  }}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                />
+              );
+            })}
+            {(selectedTool === "select" || selectedTool === "text") && selectedId && (
               <Transformer
                 ref={transformerRef}
                 rotateEnabled={false}
@@ -953,7 +1233,48 @@ function Whiteboard({ socket, roomId }) {
           </Layer>
         </Stage>
 
+        {editingTextId && (() => {
+          const editingText = texts.find((t) => t.id === editingTextId);
+          if (!editingText) return null;
 
+          return (
+            <textarea
+              value={tempTextValue}
+              onChange={(e) => setTempTextValue(e.target.value)}
+              onBlur={handleTextEditComplete}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleTextEditComplete();
+                } else if (e.key === "Escape") {
+                  setEditingTextId(null);
+                  setTempTextValue("");
+                }
+              }}
+              autoFocus
+              style={{
+                position: "absolute",
+                left: editingText.x + stagePos.x,
+                top: editingText.y + stagePos.y,
+                fontSize: `${editingText.fontSize}px`,
+                color: getAdaptiveColor(editingText.color, theme),
+                background: "transparent",
+                border: "1px dashed #3b82f6",
+                outline: "none",
+                resize: "both",
+                fontFamily: "sans-serif",
+                padding: "2px",
+                margin: 0,
+                zIndex: 1000,
+                overflow: "hidden",
+                whiteSpace: "pre-wrap",
+                minWidth: "150px",
+                height: "auto",
+                lineHeight: 1.2,
+              }}
+            />
+          );
+        })()}
       </div>
     </div>
   );

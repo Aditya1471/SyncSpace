@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../css/Userdashboard.css";
 
@@ -25,7 +25,10 @@ import {
 } from "react-icons/fa";
 
 function ProfileView({ username, displayUsername }) {
-  const [email, setEmail] = useState("aditya.jha.12@syncspace.com");
+  const user = JSON.parse(localStorage.getItem("user"));
+  const [email, setEmail] = useState(
+    user?.email || ""
+  );
   const [role, setRole] = useState("Lead Full Stack Developer");
   const [bio, setBio] = useState("Building the future of real-time collaborative development workspaces.");
   const [saved, setSaved] = useState(false);
@@ -78,15 +81,31 @@ function ProfileView({ username, displayUsername }) {
 }
 
 function SettingsView() {
-  const [theme, setTheme] = useState("VS-Dark (Default)");
-  const [syncDelay, setSyncDelay] = useState("Real-time (0ms)");
-  const [notifications, setNotifications] = useState(true);
+  const [theme, setTheme] = useState(
+    localStorage.getItem("theme") || "VS-Dark (Default)"
+  );
+
+  const [syncDelay, setSyncDelay] = useState(
+    localStorage.getItem("syncDelay") || "Real-time (0ms)"
+  );
+
+  const [notifications, setNotifications] = useState(
+    localStorage.getItem("notifications") !== "false"
+  );
   const [saved, setSaved] = useState(false);
 
   const handleSave = (e) => {
     e.preventDefault();
+
+    localStorage.setItem("theme", theme);
+    localStorage.setItem("syncDelay", syncDelay);
+    localStorage.setItem("notifications", notifications);
+
     setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+
+    setTimeout(() => {
+      setSaved(false);
+    }, 3000);
   };
 
   return (
@@ -117,7 +136,21 @@ function SettingsView() {
         <button type="submit" style={{ alignSelf: "flex-start", padding: "0.8rem 2rem", background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", transition: "all 0.2s ease", boxShadow: "0 4px 14px rgba(99, 102, 241, 0.3)" }}>
           Apply System Settings
         </button>
-        {saved && <span style={{ color: "#10b981", fontSize: "0.95rem", fontWeight: "500" }}>✓ Workspace settings updated!</span>}
+        {saved && (
+          <div
+            style={{
+              marginTop: "1rem",
+              padding: "10px 16px",
+              background: "rgba(16, 185, 129, 0.15)",
+              color: "#10b981",
+              borderRadius: "8px",
+              fontWeight: "600",
+              width: "fit-content"
+            }}
+          >
+            ✓ Workspace settings updated!
+          </div>
+        )}
       </form>
     </div>
   );
@@ -126,6 +159,23 @@ function SettingsView() {
 export default function UserDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [showAllRooms, setShowAllRooms] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  
+  const [toastMsg, setToastMsg] = useState("");
+  useEffect(() => {
+    const msg = localStorage.getItem("loginSuccess");
+
+    if (msg) {
+      setToastMsg(msg);
+      localStorage.removeItem("loginSuccess");
+
+      setTimeout(() => {
+        setToastMsg("");
+      }, 3000);
+    }
+  }, []);
 
   // ===========================
   // User Data
@@ -138,6 +188,33 @@ export default function UserDashboard() {
     username.split('.')[0].split('_')[0].charAt(0).toUpperCase() + 
     username.split('.')[0].split('_')[0].slice(1)
   );
+
+
+
+
+  // ADD HERE
+  const handleSearchChange = (e) => {
+  setSearchQuery(e.target.value);
+};
+
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+
+    if (hour >= 5 && hour < 12) {
+      return "Good Morning";
+    }
+
+    if (hour >= 12 && hour < 17) {
+      return "Good Afternoon";
+    }
+
+    if (hour >= 17 && hour < 21) {
+      return "Good Evening";
+    }
+
+    return "Welcome Back";
+  };
 
   const stats = [
     {
@@ -220,6 +297,11 @@ export default function UserDashboard() {
 
   return (
     <div className="dashboard">
+      {toastMsg && (
+        <div className="toast">
+          {toastMsg}
+        </div>
+      )}
 
       {/* ================================= */}
       {/* Sidebar */}
@@ -309,8 +391,9 @@ export default function UserDashboard() {
             <input
               type="text"
               placeholder="Search rooms..."
+              value={searchQuery}
+              onChange={handleSearchChange}
             />
-
           </div>
 
           <div className="topbar-right">
@@ -363,7 +446,7 @@ export default function UserDashboard() {
 
             <h1>
 
-              Good Evening,
+              {getGreeting()},
 
               <br />
 
@@ -382,7 +465,7 @@ export default function UserDashboard() {
 
             <div className="hero-buttons">
 
-              <Link to="/rooms">
+              <Link to="/rooms?tab=create">
 
                 <button className="primary-btn">
 
@@ -394,7 +477,7 @@ export default function UserDashboard() {
 
               </Link>
 
-              <Link to="/rooms">
+              <Link to="/rooms?tab=join">
 
                 <button className="secondary-btn">
 
@@ -481,7 +564,10 @@ export default function UserDashboard() {
         {/* Workspace Section */}
         {/* ================================= */}
 
-       <section className="workspace-section">
+       <section
+          id="recent-rooms"
+          className="workspace-section"
+        >
 
   <div className="section-header">
 
@@ -493,16 +579,27 @@ export default function UserDashboard() {
       </p>
     </div>
 
-    <div className="view-all-btn">
-      View All
-      <FaArrowRight />
-    </div>
+    <div
+    className="view-all-btn"
+    onClick={() => setShowAllRooms(!showAllRooms)}
+    style={{ cursor: "pointer" }}
+  >
+    {showAllRooms ? "View Less" : "View All"}
+    <FaArrowRight />
+  </div>
 
   </div>
 
   <div className="rooms-grid">
 
-    {recentRooms.map((room) => (
+    {recentRooms
+    .filter((room) =>
+      room.room
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase())
+    )
+    .slice(0, showAllRooms ? recentRooms.length : 4)
+    .map((room) => (
 
       <div
         className="room-card"
@@ -545,11 +642,12 @@ export default function UserDashboard() {
         </div>
 
         <button
-          className="enter-room"
-        >
-          Enter Room
-          <FaArrowRight />
-        </button>
+        className="enter-room"
+        onClick={() => navigate(`/workspace/${room.id}`)}
+      >
+        Enter Room
+        <FaArrowRight />
+      </button>
 
       </div>
 
